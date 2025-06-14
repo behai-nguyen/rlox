@@ -1,0 +1,23 @@
+var str = "運去英雄飲恨多"; // Sự khứ anh hùng ẩm hận đa
+
+var str1 = "Đông thê thê như gió thổi u hồn 😢";
+
+// "This Autumn Will End": a poem by Yosano Akiko.
+var str2 = "秋の終わり"; 
+
+// type_: Var, lexeme: var, literal: None, line: 1
+// type_: Identifier, lexeme: str, literal: None, line: 1
+// type_: Equal, lexeme: =, literal: None, line: 1
+// type_: String [運去英雄飲恨多], lexeme: "運去英雄飲恨多", literal: None, line: 1
+// type_: Semicolon, lexeme: ;, literal: None, line: 1
+// type_: Var, lexeme: var, literal: None, line: 3
+// type_: Identifier, lexeme: str1, literal: None, line: 3
+// type_: Equal, lexeme: =, literal: None, line: 3
+// type_: String [Đông thê thê như gió thổi u hồn 😢], lexeme: "Đông thê thê như gió thổi u hồn 😢", literal: None, line: 3
+// type_: Semicolon, lexeme: ;, literal: None, line: 3
+// type_: Var, lexeme: var, literal: None, line: 6
+// type_: Identifier, lexeme: str2, literal: None, line: 6
+// type_: Equal, lexeme: =, literal: None, line: 6
+// type_: String [秋の終わり], lexeme: "秋の終わり", literal: None, line: 6
+// type_: Semicolon, lexeme: ;, literal: None, line: 6
+// type_: Eof, lexeme: , literal: None, line: 6
