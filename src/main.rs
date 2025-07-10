@@ -14,6 +14,9 @@ mod token_type;
 mod token;
 mod scanner;
 
+mod expr;
+mod stmt;
+
 use scanner::Scanner;
 
 fn report(line: usize, err_where: &str, message: &str) {
@@ -58,7 +61,7 @@ pub fn run_prompt() -> Result<(), std::io::Error> {
             .read_line(&mut line)?;
 
         // Remove \r\n
-        line.retain(|c| (c != '\r') & (c != '\n' ));
+        line.retain(|c| c != '\r' && c != '\n');
 
         if line.len() == 0 {
             break;
@@ -78,7 +81,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() > 2 {
-        println!("Usage: jlox [script]");
+        println!("Usage: {} [script]", &args[0]);
         process::exit(1);
     } else if args.len() == 2 {
         let _ = run_file(&args[1]);
