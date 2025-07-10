@@ -54,6 +54,16 @@ I am attempting a Rust implementation of Robert Nystrom's Lox language discussed
 
 We won’t be discussing the theory of the visitor pattern in this post.
 
+3. [rlox: A Rust Implementation of “Crafting Interpreters” – Abstract Syntax Tree (AST) – Representing Code](https://behainguyen.wordpress.com/2025/07/10/rlox-a-rust-implementation-of-crafting-interpreters-abstract-syntax-tree-ast-representing-code/)
+
+The code version for the above post has been tagged with **v0.1.0**. It can be cloned with:
+  
+```
+git clone -b v0.1.1 https://github.com/behai-nguyen/rlox.git
+```
+
+The primary focus of this post is Chapter 5: <a href="https://craftinginterpreters.com/representing-code.html" title="Representing Code" target="_blank">Representing Code</a>, in which the author introduces an independent tool to generate ASTs for both expressions and statements, followed by a printer for displaying the AST. This post briefly discusses my Rust implementation of both tools.
+
 ## License
 [MIT license](http://www.opensource.org/licenses/mit-license.php)
 and the [Creative Commons](  https://creativecommons.org/licenses/by-nc-nd/4.0/).
