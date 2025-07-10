@@ -7,31 +7,42 @@ use std::fmt;
 
 use super::token_type::TokenType;
 
+#[derive(Clone, Debug)]
+pub enum LiteralValue {
+    Number(f64),
+    String(String),
+    Boolean(bool),
+    Nil,
+}
+
+#[derive(Clone)]
 pub struct Token {
     type_: TokenType,
     lexeme: String,
-    /// I don't Rust implementation needs this ``literal`` field. 
-    /// Possibly will be removed in the future.
-    literal: Option<String>,
+    literal: Option<LiteralValue>,
     line: usize,
 }
 
 impl Token {
-    pub fn new(type_: TokenType, lexeme: String, literal: Option<String>, line: usize) -> Self {
-        Token { type_, lexeme, literal, line }
+    pub fn new(type_: TokenType, 
+        lexeme: String, 
+        literal: Option<LiteralValue>, 
+        line: usize) -> Self {
+            Token { type_, lexeme, literal, line }
     }
 
-    #[allow(dead_code)]
     pub fn get_type(&self) -> TokenType {
         self.type_.clone()
     }
 
-    #[allow(dead_code)]
     pub fn get_lexeme(&self) -> &str {
         &self.lexeme
     }
 
-    #[allow(dead_code)]
+    pub fn get_literal(&self) -> &Option<LiteralValue> {
+        &self.literal
+    }
+
     pub fn get_line(&self) -> usize {
         self.line
     }
@@ -39,10 +50,30 @@ impl Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
         write!(f, "type_: {}, lexeme: {}, literal: {}, line: {}", 
             self.type_, 
             self.lexeme, 
-            if let Some(val) = &self.literal { val } else { "None" },
+            /*match &self.literal {
+                None => "None".to_string(),
+                Some(val) => {
+                    match val {
+                        LiteralValue::Number(n) => n.to_string(),
+                        LiteralValue::String(s) => s.to_string(),
+                        LiteralValue::Boolean(b) => b.to_string(),
+                        LiteralValue::Nil => "nil".to_string()
+                    }
+                }
+            },*/
+            self.literal
+                .as_ref()
+                .map(|val| match val {
+                    LiteralValue::Number(n) => n.to_string(),
+                    LiteralValue::String(s) => s.to_string(),
+                    LiteralValue::Boolean(b) => b.to_string(),
+                    LiteralValue::Nil => "nil".to_string(),
+                })
+                .unwrap_or_else(|| "None".to_string()),
             self.line
         )
     }
