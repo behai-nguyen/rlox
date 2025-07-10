@@ -12,14 +12,14 @@
 //! Method names follow Rust convention. I.e.: ``scan_tokens``, ``peek_next``, etc.
 //! 
 //! Where an identifier is not a keyword in the Java language, but a keyword in Rust, 
-//! it is suffixed with an underscore **-**. E.g. ``match`` in Java is ``match_`` in
+//! it is suffixed with an underscore **-**. E.g. ``match`` in Java is ``match_char`` in
 //! Rust.
 
 use std::collections::HashMap;
 
 use super::lox_error::LoxError;
 use super::scanner_index::ScannerIndex;
-use super::token::Token;
+use super::token::{LiteralValue, Token};
 use super::token_type::TokenType;
 
 type KeywordsMap = HashMap<&'static str, TokenType>;
@@ -48,7 +48,7 @@ impl<'a> Scanner<'a> {
         indexes.get_current() >= self.source.chars().count()
     }    
 
-    fn match_(&self, indexes: &mut ScannerIndex, expected: char) -> bool {
+    fn match_char(&self, indexes: &mut ScannerIndex, expected: char) -> bool {
         if self.is_at_end(indexes) {
             return false;
         }
@@ -118,10 +118,11 @@ impl<'a> Scanner<'a> {
         #[cfg(debug_assertions)]
         {
             println!("string():\n{0}org. value: {1}\n{0}type: {2}\n", 
-                      "    ", value.clone(), TokenType::String(value.clone()));
+                      "    ", value, TokenType::String);
         }
 
-        self.add_token(indexes, lst, TokenType::String(value));
+        self.add_token_with_literal(indexes, lst, TokenType::String, 
+            Some(LiteralValue::String(value)));
 
         Ok(())
     }
@@ -145,16 +146,25 @@ impl<'a> Scanner<'a> {
             }
         }
 
-        let str = self.source[indexes.get_start()..indexes.get_byte_count()].to_string();
-        let value = str.parse::<f32>().map_err(|e| LoxError::new(indexes.get_line(), &format!("Failed to parse float: {}", e)))?;
+        let mut str = self.source[indexes.get_start()..indexes.get_byte_count()].to_string();
+        if !str.contains('.') {
+            str.push_str(".0");
+        } else if str.ends_with('.') {
+            str.push('0');
+        }
+
+        let value = str
+            .parse::<f64>()
+            .map_err(|e| LoxError::new(indexes.get_line(), &format!("Failed to parse float: {}", e)))?;
 
         #[cfg(debug_assertions)]
         {
             println!("number():\n{0}org. str: {1}\n{0}type: {2}\n", 
-                      "    ", str, TokenType::Number(value));
+                      "    ", str, TokenType::Number);
         }
 
-        self.add_token(indexes, lst, TokenType::Number(value));
+        self.add_token_with_literal(indexes, lst, TokenType::Number, 
+            Some(LiteralValue::Number(value)));
 
         Ok(())
     }    
@@ -202,7 +212,7 @@ impl<'a> Scanner<'a> {
         indexes: &mut ScannerIndex,
         lst: &mut Vec<Token>,
         type_: TokenType, 
-        literal: Option<String>) {
+        literal: Option<LiteralValue>) {
             let lex = self.source[indexes.get_start()..indexes.get_byte_count()].to_string();
             #[cfg(debug_assertions)] 
             {
@@ -240,27 +250,27 @@ impl<'a> Scanner<'a> {
             '*' => self.add_token(indexes, lst, TokenType::Star),
 
             '!' => {
-                let type_ = if self.match_(indexes, '=') { TokenType::BangEqual } else { TokenType::Bang };
+                let type_ = if self.match_char(indexes, '=') { TokenType::BangEqual } else { TokenType::Bang };
                 self.add_token(indexes, lst, type_);
             }
 
             '=' => {
-                let type_ = if self.match_(indexes, '=') { TokenType::EqualEqual } else { TokenType::Equal };
+                let type_ = if self.match_char(indexes, '=') { TokenType::EqualEqual } else { TokenType::Equal };
                 self.add_token(indexes, lst, type_);
             }
 
             '<' => {
-                let type_ = if self.match_(indexes, '=') { TokenType::LessEqual } else { TokenType::Less };
+                let type_ = if self.match_char(indexes, '=') { TokenType::LessEqual } else { TokenType::Less };
                 self.add_token(indexes, lst, type_);
             }
 
             '>' => {
-                let type_ = if self.match_(indexes, '=') { TokenType::GreaterEqual } else { TokenType::Greater };
+                let type_ = if self.match_char(indexes, '=') { TokenType::GreaterEqual } else { TokenType::Greater };
                 self.add_token(indexes, lst, type_);
             }
 
             '/' => {
-                if self.match_(indexes, '/') {
+                if self.match_char(indexes, '/') {
                     while (self.peek(indexes) != '\n') & !self.is_at_end(indexes) {
                         self.advance(indexes);
                     }
