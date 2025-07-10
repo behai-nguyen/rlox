@@ -8,3 +8,6 @@ pub mod scanner_index;
 pub mod token_type;
 pub mod token;
 pub mod scanner;
+pub mod expr;
+pub mod stmt;
+pub mod ast_printer;
