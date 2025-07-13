@@ -10,4 +10,6 @@ pub mod token;
 pub mod scanner;
 pub mod expr;
 pub mod stmt;
+pub mod parser;
 pub mod ast_printer;
+pub mod interpreter;
