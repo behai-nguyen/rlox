@@ -4,6 +4,11 @@ A work-in-progress Rust implementation of Robert Nystrom's Lox language, as pres
 
 For each completed stage, I document my progress in a post, which is listed in the [Related post(s)](#related-posts) section below.
 
+## 📘 RLox Language Guide
+
+A working guide to the Lox language features currently implemented in this project.  
+→ [View RLoxGuide.md](https://github.com/behai-nguyen/rlox/blob/main/docs/RLoxGuide.md)
+
 ## To Run
 
 Clone the repository to your local machine:
@@ -16,13 +21,15 @@ Change to the ``rlox`` directory. The application can be run interactively or wi
 
 💥 The application's behavior will evolve as development progresses. As a result, the discussions below will be updated accordingly.
 
+At this stage, the parser can only parse expressions. Please refer to the `RLox Language Guide`'s [Expressions and Operators](./docs/RLoxGuide.md#expressions-and-operators) for valid expressions.
+
 ### To Run Interactively
 
 ```
-$ cargo run
+$ cargo run --release
 ```
 
-Enter something like ``var str2 = "秋の終わり";``, and press ``Enter`` — you will see the tokens printed out.
+Enter something such as `("abc" * (4.5 / 2));`, and press `Enter` — you will see the parser and the evaluation (interpreter) results printed out.
 
 Currently, inputs are treated independently, meaning each new input has no relation to the previous one.
 
@@ -31,10 +38,10 @@ To exit, simply press ``Enter`` without entering anything.
 ### To Run with a Lox Script File
 
 ```
-$ cargo run ./tests/data/scanning/numbers.lox
+$ cargo run --release ./tests/data/expressions/evaluate.lox
 ```
 
-If there are no errors, you will see the tokens printed out.
+If there are no errors, you will see the parser and the evaluation (interpreter) results printed out.
 
 ## Related post(s)
 
@@ -56,13 +63,23 @@ We won’t be discussing the theory of the visitor pattern in this post.
 
 3. [rlox: A Rust Implementation of “Crafting Interpreters” – Abstract Syntax Tree (AST) – Representing Code](https://behainguyen.wordpress.com/2025/07/10/rlox-a-rust-implementation-of-crafting-interpreters-abstract-syntax-tree-ast-representing-code/)
 
-The code version for the above post has been tagged with **v0.1.0**. It can be cloned with:
+The code version for the above post has been tagged with **v0.1.1**. It can be cloned with:
   
 ```
 git clone -b v0.1.1 https://github.com/behai-nguyen/rlox.git
 ```
 
 The primary focus of this post is Chapter 5: <a href="https://craftinginterpreters.com/representing-code.html" title="Representing Code" target="_blank">Representing Code</a>, in which the author introduces an independent tool to generate ASTs for both expressions and statements, followed by a printer for displaying the AST. This post briefly discusses my Rust implementation of both tools.
+
+4. [rlox: A Rust Implementation of “Crafting Interpreters” – Parsing and Evaluating Expressions](https://behainguyen.wordpress.com/2025/07/13/rlox-a-rust-implementation-of-crafting-interpreters-parsing-and-evaluating-expressions/)
+
+The code version for the above post has been tagged with **v0.2.0**. It can be cloned with:
+  
+```
+git clone -b v0.2.0 https://github.com/behai-nguyen/rlox.git
+```
+
+In this post, I briefly describe the implementation of the code in Chapter 6: <a href="https://craftinginterpreters.com/parsing-expressions.html" title="Parsing Expressions" target="_blank">Parsing Expressions</a>, and Chapter 7: <a href="https://craftinginterpreters.com/evaluating-expressions.html" title="Evaluating Expressions" target="_blank">Evaluating Expressions</a>.
 
 ## License
 [MIT license](http://www.opensource.org/licenses/mit-license.php)
