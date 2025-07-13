@@ -1,0 +1,6 @@
+// Date Created: 07/07/2025.
+
+// From the section https://craftinginterpreters.com/representing-code.html#a-not-very-pretty-printer
+(-123 * 45.67)
+// expect: (* (- 123.0) (group 45.67))
+// Note: I cannot get the expected output. Please see parse-03.lox.
