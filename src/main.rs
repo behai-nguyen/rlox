@@ -13,11 +13,16 @@ mod scanner_index;
 mod token_type;
 mod token;
 mod scanner;
+mod ast_printer;
+mod parser;
+mod interpreter;
 
 mod expr;
 mod stmt;
 
 use scanner::Scanner;
+use ast_printer::AstPrinter;
+use interpreter::Interpreter;
 
 fn report(line: usize, err_where: &str, message: &str) {
     println!("[line {line}] Error {err_where}: {message}");
@@ -30,8 +35,18 @@ fn error(line: usize, message: &str) {
 fn run(source: &str) -> Result<(), std::io::Error> {
     match Scanner::new(source).scan_tokens() {
         Ok(tokens) => {
-            for token in tokens {
-                println!("Token: {token}")
+            let parser = parser::Parser::new(&tokens);
+            match parser.parse() {
+                Err(err) => println!("Parsing error: {}", err),
+                Ok(expr) => { 
+                    println!("Expression: {}", AstPrinter{}.print_expression(&expr).unwrap()); 
+
+                    let interpreter = Interpreter{};
+                    match interpreter.interpret(&expr) {
+                        Err(err) => println!("Evaluation error: {}", err),
+                        Ok(val) => println!("Evaluated to: {}", val),
+                    }
+                },
             }
         },
         Err(err) => {
