@@ -1,5 +1,6 @@
 //> Appendix II expr
 use super::token::{LiteralValue, Token};
+use super::lox_error::LoxError;
 
 //> expr-assign
 #[derive(Clone)]
@@ -340,23 +341,23 @@ pub enum Expr {
 
 // Visitor Trait
 pub trait Visitor<T> {
-    fn visit_assign_expr(&self, expr: &Assign) -> T;
-    fn visit_binary_expr(&self, expr: &Binary) -> T;
-    fn visit_call_expr(&self, expr: &Call) -> T;
-    fn visit_get_expr(&self, expr: &Get) -> T;
-    fn visit_grouping_expr(&self, expr: &Grouping) -> T;
-    fn visit_literal_expr(&self, expr: &Literal) -> T;
-    fn visit_logical_expr(&self, expr: &Logical) -> T;
-    fn visit_set_expr(&self, expr: &Set) -> T;
-    fn visit_super_expr(&self, expr: &Super) -> T;
-    fn visit_this_expr(&self, expr: &This) -> T;
-    fn visit_unary_expr(&self, expr: &Unary) -> T;
-    fn visit_variable_expr(&self, expr: &Variable) -> T;
+    fn visit_assign_expr(&self, expr: &Assign) -> Result<T, LoxError>;
+    fn visit_binary_expr(&self, expr: &Binary) -> Result<T, LoxError>;
+    fn visit_call_expr(&self, expr: &Call) -> Result<T, LoxError>;
+    fn visit_get_expr(&self, expr: &Get) -> Result<T, LoxError>;
+    fn visit_grouping_expr(&self, expr: &Grouping) -> Result<T, LoxError>;
+    fn visit_literal_expr(&self, expr: &Literal) -> Result<T, LoxError>;
+    fn visit_logical_expr(&self, expr: &Logical) -> Result<T, LoxError>;
+    fn visit_set_expr(&self, expr: &Set) -> Result<T, LoxError>;
+    fn visit_super_expr(&self, expr: &Super) -> Result<T, LoxError>;
+    fn visit_this_expr(&self, expr: &This) -> Result<T, LoxError>;
+    fn visit_unary_expr(&self, expr: &Unary) -> Result<T, LoxError>;
+    fn visit_variable_expr(&self, expr: &Variable) -> Result<T, LoxError>;
 }
 
 // Implement `accept()` for `Expr`
 impl Expr {
-    pub fn accept<T>(&self, visitor: &dyn Visitor<T>) -> T {
+    pub fn accept<T>(&self, visitor: &dyn Visitor<T>) -> Result<T, LoxError> {
         match self {
             Expr::Assign(val) => visitor.visit_assign_expr(val),
             Expr::Binary(val) => visitor.visit_binary_expr(val),

@@ -1,6 +1,7 @@
 //> Appendix II stmt
 use super::token::Token;
 use super::expr::Expr;
+use super::lox_error::LoxError;
 
 //> stmt-block
 #[derive(Clone)]
@@ -258,20 +259,20 @@ pub enum Stmt {
 
 // Visitor Trait
 pub trait Visitor<T> {
-    fn visit_block_stmt(&self, stmt: &Block) -> T;
-    fn visit_class_stmt(&self, stmt: &Class) -> T;
-    fn visit_expression_stmt(&self, stmt: &Expression) -> T;
-    fn visit_function_stmt(&self, stmt: &Function) -> T;
-    fn visit_if_stmt(&self, stmt: &If) -> T;
-    fn visit_print_stmt(&self, stmt: &Print) -> T;
-    fn visit_return_stmt(&self, stmt: &Return) -> T;
-    fn visit_var_stmt(&self, stmt: &Var) -> T;
-    fn visit_while_stmt(&self, stmt: &While) -> T;
+    fn visit_block_stmt(&self, stmt: &Block) -> Result<T, LoxError>;
+    fn visit_class_stmt(&self, stmt: &Class) -> Result<T, LoxError>;
+    fn visit_expression_stmt(&self, stmt: &Expression) -> Result<T, LoxError>;
+    fn visit_function_stmt(&self, stmt: &Function) -> Result<T, LoxError>;
+    fn visit_if_stmt(&self, stmt: &If) -> Result<T, LoxError>;
+    fn visit_print_stmt(&self, stmt: &Print) -> Result<T, LoxError>;
+    fn visit_return_stmt(&self, stmt: &Return) -> Result<T, LoxError>;
+    fn visit_var_stmt(&self, stmt: &Var) -> Result<T, LoxError>;
+    fn visit_while_stmt(&self, stmt: &While) -> Result<T, LoxError>;
 }
 
 // Implement `accept()` for `Stmt`
 impl Stmt {
-    pub fn accept<T>(&self, visitor: &dyn Visitor<T>) -> T {
+    pub fn accept<T>(&self, visitor: &dyn Visitor<T>) -> Result<T, LoxError> {
         match self {
             Stmt::Block(val) => visitor.visit_block_stmt(val),
             Stmt::Class(val) => visitor.visit_class_stmt(val),
