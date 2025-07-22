@@ -2,6 +2,10 @@
 Date Created: 06/06/2025.
 -->
 
+**Please note:**
+
+All scripts are used in [tests/test_scanner.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_scanner.rs)
+
 1. `identifiers.lox`, `keywords.lox`, `numbers.lox`, `punctuators.lox`, 
 `strings.lox` and  `whitespace.lox` are from 
 [ https://github.com/munificent/craftinginterpreters/tree/master/test/scanning ](https://github.com/munificent/craftinginterpreters/tree/master/test/scanning).
