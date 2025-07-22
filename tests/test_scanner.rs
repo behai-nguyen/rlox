@@ -1,6 +1,6 @@
 // Date Created: 05/06/2025.
 
-//! Uses data from `./data/scanning/`.
+//! Uses data from `./data/`.
 //! 
 //! To run test for this module only: 
 //! 
@@ -8,14 +8,17 @@
 //! 
 //! To run a specific test method: 
 //! 
-//!     * cargo test identifiers -- --exact [--nocapture]
-//!     * cargo test keywords -- --exact [--nocapture]
-//!     * cargo test numbers -- --exact [--nocapture]
-//!     * cargo test punctuators -- --exact [--nocapture]
-//!     * cargo test strings -- --exact [--nocapture]
-//!     * cargo test whitespace -- --exact [--nocapture]
-//!     * cargo test sample -- --exact [--nocapture]
-//!     * cargo test utf8_text -- --exact [--nocapture]
+//!     * cargo test test_scanner_identifiers -- --exact [--nocapture]
+//!     * cargo test test_scanner_keywords -- --exact [--nocapture]
+//!     * cargo test test_scanner_numbers -- --exact [--nocapture]
+//!     * cargo test test_scanner_punctuators -- --exact [--nocapture]
+//!     * cargo test test_scanner_strings -- --exact [--nocapture]
+//!     * cargo test test_scanner_whitespace -- --exact [--nocapture]
+//!     * cargo test test_scanner_sample -- --exact [--nocapture]
+//!     * cargo test test_scanner_utf8_text -- --exact [--nocapture]
+//! 
+//!     * cargo test test_scanner_generics -- --exact [--nocapture]
+//! 
 
 mod test_common;
 
@@ -24,13 +27,16 @@ use crate::test_common::{
     assert_literal_number,
     assert_literal_string,
     assert_literal_none,
+    TestScriptAndResult,
+    TestScriptAndResults,
+    assert_scanner_result,
 };
 
 use rlox::token_type::TokenType;
 use rlox::scanner::Scanner;
 
 #[test]
-fn identifiers() {
+fn test_scanner_identifiers() {
     let res = get_script_contents("./tests/data/scanning/identifiers.lox");
     // Read script file was successful.
     assert_eq!(res.is_err(), false);
@@ -100,7 +106,7 @@ fn identifiers() {
 }
 
 #[test]
-fn keywords() {
+fn test_scanner_keywords() {
     let res = get_script_contents("./tests/data/scanning/keywords.lox");
     // Read script file was successful.
     assert_eq!(res.is_err(), false);
@@ -216,7 +222,7 @@ fn keywords() {
 // section https://craftinginterpreters.com/scanning.html#number-literals of 
 // the book fairly thoroughly: particularly the leading and trailing decimal
 // point.
-fn numbers() {
+fn test_scanner_numbers() {
     let res = get_script_contents("./tests/data/scanning/numbers.lox");
     // Read script file was successful.
     assert_eq!(res.is_err(), false);
@@ -274,7 +280,7 @@ fn numbers() {
 }
 
 #[test]
-fn punctuators() {
+fn test_scanner_punctuators() {
     let res = get_script_contents("./tests/data/scanning/punctuators.lox");
     // Read script file was successful.
     assert_eq!(res.is_err(), false);
@@ -404,7 +410,7 @@ fn punctuators() {
 }
 
 #[test]
-fn strings() {
+fn test_scanner_strings() {
     let res = get_script_contents("./tests/data/scanning/strings.lox");
     // Read script file was successful.
     assert_eq!(res.is_err(), false);
@@ -440,7 +446,7 @@ fn strings() {
 }
 
 #[test]
-fn whitespace() {
+fn test_scanner_whitespace() {
     let res = get_script_contents("./tests/data/scanning/whitespace.lox");
     // Read script file was successful.
     assert_eq!(res.is_err(), false);
@@ -485,7 +491,7 @@ fn whitespace() {
 }
 
 #[test]
-fn sample() {
+fn test_scanner_sample() {
     let res = get_script_contents("./tests/data/scanning/sample.lox");
     // Read script file was successful.
     assert_eq!(res.is_err(), false);
@@ -542,7 +548,7 @@ fn sample() {
 }
 
 #[test]
-fn utf8_text() {
+fn test_scanner_utf8_text() {
     let res = get_script_contents("./tests/data/scanning/utf8_text.lox");
     // Read script file was successful.
     assert_eq!(res.is_err(), false);
@@ -651,4 +657,29 @@ fn utf8_text() {
     assert_literal_none(token.get_literal());
     // 24 lines in the script file.
     assert_eq!(token.get_line(), 24);
+}
+
+fn get_generic_script_results<'a>() -> TestScriptAndResults<'a> {    
+    vec![
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/string
+        TestScriptAndResult {
+            script_name: "./tests/data/string/unterminated.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at '\0': Unterminated string."],
+        },
+    ] // cargo test test_scanner_generics -- --exact
+}
+
+#[test]
+fn test_scanner_generics() {
+    let generic_script_results = get_generic_script_results();
+
+    for entry in generic_script_results {
+        let res = get_script_contents(entry.script_name);
+        // Read script file was successful.
+        assert!(res.is_ok(), "Error loading {}", entry.script_name);
+
+        let res = Scanner::new(&res.unwrap()).scan_tokens();
+        assert_scanner_result(&entry, &res);
+   }    
 }
