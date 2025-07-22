@@ -9,48 +9,41 @@ use std::fs::read_to_string;
 use std::io::{self, Write};
 
 mod lox_error;
+mod lox_error_helper;
 mod scanner_index;
 mod token_type;
 mod token;
+mod data_type;
 mod scanner;
 mod ast_printer;
 mod parser;
+mod environment;
 mod interpreter;
 
 mod expr;
 mod stmt;
 
 use scanner::Scanner;
-use ast_printer::AstPrinter;
 use interpreter::Interpreter;
 
-fn report(line: usize, err_where: &str, message: &str) {
-    println!("[line {line}] Error {err_where}: {message}");
-}
-
-fn error(line: usize, message: &str) {
-    report(line, "", message);
-}
-
 fn run(source: &str) -> Result<(), std::io::Error> {
-    match Scanner::new(source).scan_tokens() {
+    let mut scanner = Scanner::new(source);
+    match scanner.scan_tokens() {
         Ok(tokens) => {
-            let parser = parser::Parser::new(&tokens);
+            let mut parser = parser::Parser::new(&tokens);
             match parser.parse() {
                 Err(err) => println!("Parsing error: {}", err),
-                Ok(expr) => { 
-                    println!("Expression: {}", AstPrinter{}.print_expression(&expr).unwrap()); 
-
-                    let interpreter = Interpreter{};
-                    match interpreter.interpret(&expr) {
+                Ok(statements) => { 
+                    let mut interpreter = Interpreter::new(io::stdout());
+                    match interpreter.interpret(statements) {
                         Err(err) => println!("Evaluation error: {}", err),
-                        Ok(val) => println!("Evaluated to: {}", val),
+                        Ok(_) => (),
                     }
                 },
             }
         },
         Err(err) => {
-            error(err.get_line(), &err.get_err_msg());
+            println!("{}", err);
             process::exit(65);
         }
     }
