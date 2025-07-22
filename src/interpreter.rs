@@ -1,34 +1,74 @@
 /* Date Created: 10/07/2025. */
 
-//! The **Evaluating Expressions** in  
+//! The **Evaluating Expressions** section in  
 //! [https://craftinginterpreters.com/evaluating-expressions.html](https://craftinginterpreters.com/evaluating-expressions.html). 
 //! 
 
+use std::io::Write;
+use std::rc::Rc;
+use std::cell::RefCell;
+
 use crate::token_type::TokenType;
-
 use super::lox_error::LoxError;
+use super::lox_error_helper::error; 
 use super::token::{LiteralValue, Token};
+use super::data_type::Value;
+use super::{
+    expr,
+    expr::{Expr, Assign, Binary, Call, Get, Grouping,
+        Literal, Logical, Set, Super, This, Unary, Variable,}
+};
+use super::{
+    stmt,
+    stmt::{Stmt, Block, Class, Expression, Function, If, Print, 
+        Return, Var, While,}
+};
+use super::environment::{Environment, EnvironmentRef};
 
-use super::expr::*;
-
-// Rust-specific.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Value {
-    Number(f64),
-    String(String),
-    Boolean(bool),
-    Nil,
+pub struct Interpreter<W: Write> {
+    output: W,
+    // The variable global scope.
+    environment: EnvironmentRef,
 }
 
-pub struct Interpreter;
-
-impl Interpreter {
-    fn error(&self, token: &Token, message: &str) -> LoxError {
-        LoxError::new(token.get_line(), &format!("{}", message))
+impl<W: Write> Interpreter<W> {
+    pub fn new(output: W) -> Self {
+        Interpreter { 
+            output,
+            environment: Rc::new(RefCell::new(Environment::new())),
+        }
     }
 
-    fn evaluate(&self, expr: &Expr) -> Result<Value, LoxError> {
-        expr.accept(self)
+    pub fn get_output(&self) -> &W {
+        &self.output
+    }
+
+    fn write_output(&mut self, value: &str) {
+        writeln!(self.output, "{}", value).expect("Failed to write output");
+    }
+
+    fn evaluate(&mut self, expr: &Expr) -> Result<Value, LoxError> {
+        expr.accept_ref(self)
+    }
+
+    fn execute(&mut self, stmt: &Stmt) -> Result<(), LoxError> {
+        stmt.accept_ref(self)
+    }
+
+    // See: https://craftinginterpreters.com/statements-and-state.html#scope
+    pub fn execute_block(&mut self, statements: &[Stmt], 
+        new_env: EnvironmentRef) -> Result<(), LoxError> {
+        let previous = std::mem::replace(&mut self.environment, new_env);
+
+        let result = (|| {
+            for stmt in statements {
+                self.execute(stmt)?;
+            }
+            Ok(())
+        })();
+
+        self.environment = previous;
+        result
     }
 
     // Ruby rule: false and nil are falsey, and everything else is truthy. 
@@ -49,23 +89,14 @@ impl Interpreter {
         operand: &Value) -> Result<(), LoxError> {
         match operand {
             Value::Number(_) => Ok(()),
-            _ => Err(self.error(operator, "Operand must be a number.")),
+            _ => Err(error(operator, "Operand must be a number.")),
         }
     }
-
-    // In original Java version. Not being used in Rust.
-    /*fn check_number_operands(&self, operator: &Token, 
-        left: &Value, right: &Value) -> Result<(), LoxError> {
-        match (left, right) {
-            (Value::Number(_), Value::Number(_)) => Ok(()),
-            _ => Err(self.error(operator, "Operands must be numbers.")),
-        }
-    }*/
 
     fn expect_number(&self, operator: &Token, value: &Value) -> Result<f64, LoxError> {
         match value {
             Value::Number(n) => Ok(*n),
-            _ => Err(self.error(operator, "Operand must be a number.")),
+            _ => Err(error(operator, "Operand must be a number.")),
         }
     }
 
@@ -90,81 +121,32 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&self, expression: &Expr) -> Result<String, LoxError> {
+    // Chapter 07 version: needed for the tests.
+    #[allow(dead_code)]
+    pub fn interpret_single_expression(&mut self, expression: &Expr) -> Result<String, LoxError> {
         let value: Value = self.evaluate(expression)?;
 
         Ok(self.stringify(&value))
     }
+
+    pub fn interpret(&mut self, statements: Vec<Stmt>) -> Result<(), LoxError> {
+        for statement in statements {
+            self.execute(&statement)?;
+        }
+
+        Ok(())
+    }
 }
 
-impl Visitor<Value> for Interpreter {
-    fn visit_assign_expr(&self, _: &Assign) -> Result<Value, LoxError> {
-        unimplemented!()
+impl<W: Write> expr::Visitor<Value> for Interpreter<W> {
+    fn visit_assign_expr(&mut self, expr: &Assign) -> Result<Value, LoxError> {
+        let value: Value = self.evaluate(expr.get_value())?;
+        self.environment.borrow_mut().assign(expr.get_name(), value.clone())?;
+
+        Ok(value)
     }
 
-    /*
-    // My first cut, seems okay.
-    fn visit_binary_expr(&self, expr: &Binary) -> Result<Value, LoxError> {
-        let left: Value = self.evaluate(&expr.get_left())?;
-        let right: Value = self.evaluate(&expr.get_right())?;
-
-        let operator: &Token = expr.get_operator();
-
-        match operator.get_type() {
-            TokenType::Greater => {
-                self.check_number_operands(operator, &left, &right)?;
-                Ok(Value::Boolean(self.expect_number(operator, &left)? > 
-                    self.expect_number(operator, &right)?))
-            }
-            TokenType::GreaterEqual => {
-                self.check_number_operands(operator, &left, &right)?;
-                Ok(Value::Boolean(self.expect_number(operator, &left)? >=
-                    self.expect_number(operator, &right)?))
-            }
-            TokenType::Less => {
-                self.check_number_operands(operator, &left, &right)?;
-                Ok(Value::Boolean(self.expect_number(operator, &left)? <
-                    self.expect_number(operator, &right)?))
-            }
-            TokenType::LessEqual => {
-                self.check_number_operands(operator, &left, &right)?;
-                Ok(Value::Boolean(self.expect_number(operator, &left)? <=
-                    self.expect_number(operator, &right)?))
-            }
-            TokenType::BangEqual => Ok(Value::Boolean(!self.is_equal(&left, &right))),
-            TokenType::EqualEqual => Ok(Value::Boolean(self.is_equal(&left, &right))),
-            TokenType::Minus => {
-                self.check_number_operands(operator, &left, &right)?;
-                Ok(Value::Number(self.expect_number(operator, &left)? -
-                    self.expect_number(operator, &right)?))
-            }
-            TokenType::Plus => {
-                match (left, right) {
-                    (Value::Number(ln), Value::Number(rn)) => {
-                        Ok(Value::Number(ln + rn))
-                    }
-                    (Value::String(ls), Value::String(rs)) => {
-                        Ok(Value::String(format!("{}{}", ls, rs)))
-                    }                    
-                    _ => Err(self.error(operator, "Operands must be two numbers or two strings.")),
-                }
-            }
-            TokenType::Slash => {
-                self.check_number_operands(operator, &left, &right)?;
-                Ok(Value::Number(self.expect_number(operator, &left)? /
-                    self.expect_number(operator, &right)?))
-            }
-            TokenType::Star => {
-                self.check_number_operands(operator, &left, &right)?;
-                Ok(Value::Number(self.expect_number(operator, &left)? *
-                    self.expect_number(operator, &right)?))
-            },             
-            // Unreachable.
-            _ => { Ok(Value::Nil) }
-        }
-    }
-    */
-    fn visit_binary_expr(&self, expr: &Binary) -> Result<Value, LoxError> {
+    fn visit_binary_expr(&mut self, expr: &Binary) -> Result<Value, LoxError> {
         let left: Value = self.evaluate(&expr.get_left())?;
         let right: Value = self.evaluate(&expr.get_right())?;
 
@@ -202,7 +184,7 @@ impl Visitor<Value> for Interpreter {
                     (Value::String(ls), Value::String(rs)) => {
                         Ok(Value::String(format!("{}{}", ls, rs)))
                     }                    
-                    _ => Err(self.error(operator, "Operands must be two numbers or two strings.")),
+                    _ => Err(error(operator, "Operands must be two numbers or two strings.")),
                 }
             }
             TokenType::Slash => self.binary_number_op(operator, &left, &right, |a, b| a / b),
@@ -212,19 +194,19 @@ impl Visitor<Value> for Interpreter {
         }
     }
 
-    fn visit_call_expr(&self, _: &Call) -> Result<Value, LoxError> {
+    fn visit_call_expr(&mut self, _: &Call) -> Result<Value, LoxError> {
         unimplemented!()
     }
 
-    fn visit_get_expr(&self, _: &Get) -> Result<Value, LoxError> {
+    fn visit_get_expr(&mut self, _: &Get) -> Result<Value, LoxError> {
         unimplemented!()
     }
 
-    fn visit_grouping_expr(&self, expr: &Grouping) -> Result<Value, LoxError> {
+    fn visit_grouping_expr(&mut self, expr: &Grouping) -> Result<Value, LoxError> {
         self.evaluate(expr.get_expression())
     }
 
-    fn visit_literal_expr(&self, expr: &Literal) -> Result<Value, LoxError> {
+    fn visit_literal_expr(&mut self, expr: &Literal) -> Result<Value, LoxError> {
         match expr.get_value() {
             LiteralValue::Number(n) => Ok(Value::Number(*n)),
             LiteralValue::String(s) => Ok(Value::String(s.clone())),
@@ -233,23 +215,23 @@ impl Visitor<Value> for Interpreter {
         }
     }
 
-    fn visit_logical_expr(&self, _: &Logical) -> Result<Value, LoxError> {
+    fn visit_logical_expr(&mut self, _: &Logical) -> Result<Value, LoxError> {
         unimplemented!()
     }
 
-    fn visit_set_expr(&self, _: &Set) -> Result<Value, LoxError> {
+    fn visit_set_expr(&mut self, _: &Set) -> Result<Value, LoxError> {
         unimplemented!()
     }
 
-    fn visit_super_expr(&self, _: &Super) -> Result<Value, LoxError> {
+    fn visit_super_expr(&mut self, _: &Super) -> Result<Value, LoxError> {
         unimplemented!()
     }
 
-    fn visit_this_expr(&self, _: &This) -> Result<Value, LoxError> {
+    fn visit_this_expr(&mut self, _: &This) -> Result<Value, LoxError> {
         unimplemented!()
     }
 
-    fn visit_unary_expr(&self, expr: &Unary) -> Result<Value, LoxError> {
+    fn visit_unary_expr(&mut self, expr: &Unary) -> Result<Value, LoxError> {
         let right: Value = self.evaluate(&expr.get_right())?;
 
         match expr.get_operator().get_type() {
@@ -263,7 +245,67 @@ impl Visitor<Value> for Interpreter {
         }
     }
 
-    fn visit_variable_expr(&self, _: &Variable) -> Result<Value, LoxError> {
+    fn visit_variable_expr(&mut self, expr: &Variable) -> Result<Value, LoxError> {
+        self.environment.borrow().get(expr.get_name())
+    }
+}
+
+impl<W: Write> stmt::Visitor<()> for Interpreter<W> {
+    fn visit_block_stmt(&mut self, stmt: &Block) -> Result<(), LoxError> {
+        
+        let new_env = Rc::new(RefCell::new(
+            Environment::new_local_scope(Rc::clone(&self.environment))
+        ));
+        self.execute_block(stmt.get_statements(), new_env)?;
+
+        Ok(())
+    }
+
+    fn visit_class_stmt(&mut self, _: &Class) -> Result<(), LoxError> {
+        unimplemented!()
+    }
+
+    fn visit_expression_stmt(&mut self, stmt: &Expression) -> Result<(), LoxError> {
+        self.evaluate(stmt.get_expression())?;
+        Ok(())
+    }
+
+    fn visit_function_stmt(&mut self, _: &Function) -> Result<(), LoxError> {
+        unimplemented!()
+    }
+
+    fn visit_if_stmt(&mut self, _: &If) -> Result<(), LoxError> {
+        unimplemented!()
+    }
+
+    fn visit_print_stmt(&mut self, stmt: &Print) -> Result<(), LoxError> {
+        let value: Value = self.evaluate(stmt.get_expression())?;
+
+        // Note from the author in the original Java version:
+        //     Before discarding the expression’s value, we convert it to a 
+        //     string using the stringify() method we introduced in the last 
+        //     chapter and then dump it to stdout.
+        self.write_output(&self.stringify(&value));
+        Ok(())
+    }
+
+    fn visit_return_stmt(&mut self, _: &Return) -> Result<(), LoxError> {
+        unimplemented!()
+    }
+
+    fn visit_var_stmt(&mut self, stmt: &Var) -> Result<(), LoxError> {
+        let mut value: Value = Value::Nil;
+
+        if let Some(expr) = stmt.get_initializer() {
+            value = self.evaluate(expr)?;
+        }        
+
+        self.environment.borrow_mut().define(stmt.get_name().get_lexeme().to_string(), value);
+
+        Ok(())
+    }
+
+    fn visit_while_stmt(&mut self, _: &While) -> Result<(), LoxError> {
         unimplemented!()
     }
 }
