@@ -7,20 +7,29 @@
 
 //! Error reporting, includes the line number and the actual error message.
 
+// To run test for this module only: 
+// 
+//     * cargo test lox_error::tests
+
 use std::fmt;
 
 pub struct LoxError {
     line: usize,
+    lexeme: String,
     err_msg: String
 }
 
 impl LoxError {
-    pub fn new(line: usize, msg: &str) -> LoxError {
-        LoxError{line, err_msg: msg.to_string()}
+    pub fn new(line: usize, lexeme: &str, msg: &str) -> LoxError {
+        LoxError{line, lexeme: lexeme.to_string(), err_msg: msg.to_string()}
     }
 
     pub fn get_line(&self) -> usize {
         self.line
+    }
+
+    pub fn get_lexeme(&self) -> String {
+        self.lexeme.clone()
     }
 
     pub fn get_err_msg(&self) -> String {
@@ -32,6 +41,7 @@ impl fmt::Debug for LoxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("LoxError")
             .field("line", &self.line) 
+            .field("lexeme", &self.lexeme)
             .field("err_msg", &self.err_msg)
             .finish()
     }
@@ -39,7 +49,7 @@ impl fmt::Debug for LoxError {
 
 impl fmt::Display for LoxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f,"line: {}, error: {}", self.line, self.err_msg)
+        write!(f,"[line {}] Error at '{}': {}", self.line, self.lexeme, self.err_msg)
     }
 }
 
@@ -49,7 +59,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let err = LoxError::new(10, "this is a test error");
-        assert_eq!("line: 10, error: this is a test error", err.to_string());
+        let err = LoxError::new(10, "idx", "this is a test error");
+        assert_eq!("[line 10] Error at 'idx': this is a test error", err.to_string());
     }
 }
