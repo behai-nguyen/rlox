@@ -4,7 +4,7 @@ use super::expr::Expr;
 use super::lox_error::LoxError;
 
 //> stmt-block
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Block {
     statements: Vec<Stmt>,
 }
@@ -23,7 +23,7 @@ impl Block {
 }
 
 //> stmt-class
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Class {
     name: Token,
     superclass: Option<Expr>,
@@ -57,7 +57,7 @@ impl Class {
 }
 
 //> stmt-expression
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Expression {
     expression: Expr,
 }
@@ -76,7 +76,7 @@ impl Expression {
 }
 
 //> stmt-function
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Function {
     name: Token,
     params: Vec<Token>,
@@ -110,7 +110,7 @@ impl Function {
 }
 
 //> stmt-if
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct If {
     condition: Expr,
     then_branch: Option<Box<Stmt>>,
@@ -144,7 +144,7 @@ impl If {
 }
 
 //> stmt-print
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Print {
     expression: Expr,
 }
@@ -163,7 +163,7 @@ impl Print {
 }
 
 //> stmt-return
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Return {
     keyword: Token,
     value: Option<Expr>,
@@ -190,7 +190,7 @@ impl Return {
 }
 
 //> stmt-var
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Var {
     name: Token,
     initializer: Option<Expr>,
@@ -217,7 +217,7 @@ impl Var {
 }
 
 //> stmt-while
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct While {
     condition: Expr,
     body: Box<Stmt>,
@@ -244,7 +244,7 @@ impl While {
 }
 
 // Define enum
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     Block(Block),
     Class(Class),
@@ -259,20 +259,34 @@ pub enum Stmt {
 
 // Visitor Trait
 pub trait Visitor<T> {
-    fn visit_block_stmt(&self, stmt: &Block) -> Result<T, LoxError>;
-    fn visit_class_stmt(&self, stmt: &Class) -> Result<T, LoxError>;
-    fn visit_expression_stmt(&self, stmt: &Expression) -> Result<T, LoxError>;
-    fn visit_function_stmt(&self, stmt: &Function) -> Result<T, LoxError>;
-    fn visit_if_stmt(&self, stmt: &If) -> Result<T, LoxError>;
-    fn visit_print_stmt(&self, stmt: &Print) -> Result<T, LoxError>;
-    fn visit_return_stmt(&self, stmt: &Return) -> Result<T, LoxError>;
-    fn visit_var_stmt(&self, stmt: &Var) -> Result<T, LoxError>;
-    fn visit_while_stmt(&self, stmt: &While) -> Result<T, LoxError>;
+    fn visit_block_stmt(&mut self, stmt: &Block) -> Result<T, LoxError>;
+    fn visit_class_stmt(&mut self, stmt: &Class) -> Result<T, LoxError>;
+    fn visit_expression_stmt(&mut self, stmt: &Expression) -> Result<T, LoxError>;
+    fn visit_function_stmt(&mut self, stmt: &Function) -> Result<T, LoxError>;
+    fn visit_if_stmt(&mut self, stmt: &If) -> Result<T, LoxError>;
+    fn visit_print_stmt(&mut self, stmt: &Print) -> Result<T, LoxError>;
+    fn visit_return_stmt(&mut self, stmt: &Return) -> Result<T, LoxError>;
+    fn visit_var_stmt(&mut self, stmt: &Var) -> Result<T, LoxError>;
+    fn visit_while_stmt(&mut self, stmt: &While) -> Result<T, LoxError>;
 }
 
-// Implement `accept()` for `Stmt`
+// Implement `accept()`, `accept_ref()` for `Stmt`
 impl Stmt {
-    pub fn accept<T>(&self, visitor: &dyn Visitor<T>) -> Result<T, LoxError> {
+    pub fn accept<T>(&mut self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxError> {
+        match self {
+            Stmt::Block(val) => visitor.visit_block_stmt(val),
+            Stmt::Class(val) => visitor.visit_class_stmt(val),
+            Stmt::Expression(val) => visitor.visit_expression_stmt(val),
+            Stmt::Function(val) => visitor.visit_function_stmt(val),
+            Stmt::If(val) => visitor.visit_if_stmt(val),
+            Stmt::Print(val) => visitor.visit_print_stmt(val),
+            Stmt::Return(val) => visitor.visit_return_stmt(val),
+            Stmt::Var(val) => visitor.visit_var_stmt(val),
+            Stmt::While(val) => visitor.visit_while_stmt(val),
+        }
+    }
+
+    pub fn accept_ref<T>(&self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxError> {
         match self {
             Stmt::Block(val) => visitor.visit_block_stmt(val),
             Stmt::Class(val) => visitor.visit_class_stmt(val),

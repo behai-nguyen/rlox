@@ -3,7 +3,7 @@ use super::token::{LiteralValue, Token};
 use super::lox_error::LoxError;
 
 //> expr-assign
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Assign {
     name: Token,
     value: Box<Expr>,
@@ -30,7 +30,7 @@ impl Assign {
 }
 
 //> expr-binary
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Binary {
     left: Box<Expr>,
     operator: Token,
@@ -64,7 +64,7 @@ impl Binary {
 }
 
 //> expr-call
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Call {
     callee: Box<Expr>,
     paren: Token,
@@ -98,7 +98,7 @@ impl Call {
 }
 
 //> expr-get
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Get {
     object: Box<Expr>,
     name: Token,
@@ -125,7 +125,7 @@ impl Get {
 }
 
 //> expr-grouping
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Grouping {
     expression: Box<Expr>,
 }
@@ -144,7 +144,7 @@ impl Grouping {
 }
 
 //> expr-literal
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Literal {
     value: LiteralValue,
 }
@@ -163,7 +163,7 @@ impl Literal {
 }
 
 //> expr-logical
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Logical {
     left: Box<Expr>,
     operator: Token,
@@ -197,7 +197,7 @@ impl Logical {
 }
 
 //> expr-set
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Set {
     object: Box<Expr>,
     name: Token,
@@ -231,7 +231,7 @@ impl Set {
 }
 
 //> expr-super
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Super {
     keyword: Token,
     method: Token,
@@ -258,7 +258,7 @@ impl Super {
 }
 
 //> expr-this
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct This {
     keyword: Token,
 }
@@ -277,7 +277,7 @@ impl This {
 }
 
 //> expr-unary
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Unary {
     operator: Token,
     right: Box<Expr>,
@@ -304,7 +304,7 @@ impl Unary {
 }
 
 //> expr-variable
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Variable {
     name: Token,
 }
@@ -323,7 +323,7 @@ impl Variable {
 }
 
 // Define enum
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Assign(Assign),
     Binary(Binary),
@@ -341,23 +341,40 @@ pub enum Expr {
 
 // Visitor Trait
 pub trait Visitor<T> {
-    fn visit_assign_expr(&self, expr: &Assign) -> Result<T, LoxError>;
-    fn visit_binary_expr(&self, expr: &Binary) -> Result<T, LoxError>;
-    fn visit_call_expr(&self, expr: &Call) -> Result<T, LoxError>;
-    fn visit_get_expr(&self, expr: &Get) -> Result<T, LoxError>;
-    fn visit_grouping_expr(&self, expr: &Grouping) -> Result<T, LoxError>;
-    fn visit_literal_expr(&self, expr: &Literal) -> Result<T, LoxError>;
-    fn visit_logical_expr(&self, expr: &Logical) -> Result<T, LoxError>;
-    fn visit_set_expr(&self, expr: &Set) -> Result<T, LoxError>;
-    fn visit_super_expr(&self, expr: &Super) -> Result<T, LoxError>;
-    fn visit_this_expr(&self, expr: &This) -> Result<T, LoxError>;
-    fn visit_unary_expr(&self, expr: &Unary) -> Result<T, LoxError>;
-    fn visit_variable_expr(&self, expr: &Variable) -> Result<T, LoxError>;
+    fn visit_assign_expr(&mut self, expr: &Assign) -> Result<T, LoxError>;
+    fn visit_binary_expr(&mut self, expr: &Binary) -> Result<T, LoxError>;
+    fn visit_call_expr(&mut self, expr: &Call) -> Result<T, LoxError>;
+    fn visit_get_expr(&mut self, expr: &Get) -> Result<T, LoxError>;
+    fn visit_grouping_expr(&mut self, expr: &Grouping) -> Result<T, LoxError>;
+    fn visit_literal_expr(&mut self, expr: &Literal) -> Result<T, LoxError>;
+    fn visit_logical_expr(&mut self, expr: &Logical) -> Result<T, LoxError>;
+    fn visit_set_expr(&mut self, expr: &Set) -> Result<T, LoxError>;
+    fn visit_super_expr(&mut self, expr: &Super) -> Result<T, LoxError>;
+    fn visit_this_expr(&mut self, expr: &This) -> Result<T, LoxError>;
+    fn visit_unary_expr(&mut self, expr: &Unary) -> Result<T, LoxError>;
+    fn visit_variable_expr(&mut self, expr: &Variable) -> Result<T, LoxError>;
 }
 
-// Implement `accept()` for `Expr`
+// Implement `accept()`, `accept_ref()` for `Expr`
 impl Expr {
-    pub fn accept<T>(&self, visitor: &dyn Visitor<T>) -> Result<T, LoxError> {
+    pub fn accept<T>(&mut self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxError> {
+        match self {
+            Expr::Assign(val) => visitor.visit_assign_expr(val),
+            Expr::Binary(val) => visitor.visit_binary_expr(val),
+            Expr::Call(val) => visitor.visit_call_expr(val),
+            Expr::Get(val) => visitor.visit_get_expr(val),
+            Expr::Grouping(val) => visitor.visit_grouping_expr(val),
+            Expr::Literal(val) => visitor.visit_literal_expr(val),
+            Expr::Logical(val) => visitor.visit_logical_expr(val),
+            Expr::Set(val) => visitor.visit_set_expr(val),
+            Expr::Super(val) => visitor.visit_super_expr(val),
+            Expr::This(val) => visitor.visit_this_expr(val),
+            Expr::Unary(val) => visitor.visit_unary_expr(val),
+            Expr::Variable(val) => visitor.visit_variable_expr(val),
+        }
+    }
+
+    pub fn accept_ref<T>(&self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxError> {
         match self {
             Expr::Assign(val) => visitor.visit_assign_expr(val),
             Expr::Binary(val) => visitor.visit_binary_expr(val),
