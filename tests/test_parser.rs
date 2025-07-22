@@ -8,26 +8,120 @@
 //! 
 //! To run a specific test method: 
 //! 
-//!     * cargo test parse_expr_01 -- --exact [--nocapture]
-//!     * cargo test parse_expr_02 -- --exact [--nocapture]
-//!     * cargo test parse_expr_03 -- --exact [--nocapture]
+//!     * cargo test test_parser_expr_01 -- --exact [--nocapture]
+//!     * cargo test test_parser_expr_02 -- --exact [--nocapture]
+//!     * cargo test test_parser_expr_03 -- --exact [--nocapture]
+//!
+//!     * cargo test test_parser_generic_stmt -- --exact [--nocapture] 
+//!     * cargo test test_parser_var_stmt -- --exact [--nocapture]
+//!     * cargo test test_parser_assign_stmt -- --exact [--nocapture]
+//! 
 
 mod test_common;
 
-use crate::test_common::assert_scan_script;
+use crate::test_common::{
+    assert_scan_script,
+    TestScriptAndResult,
+    TestScriptAndResults,
+    assert_parser_result,
+};
 
+use rlox::token::Token;
 use rlox::parser::Parser;
 use rlox::ast_printer::AstPrinter;
+
+fn make_parser(tokens: &Vec<Token>) -> Parser {
+    Parser::new(tokens)
+}
+
+fn get_generic_script_results<'a>() -> TestScriptAndResults<'a> {    
+    vec![
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/comments
+        TestScriptAndResult {
+            script_name: "./tests/data/comments/line_at_eof.lox",
+            expected_result: true,
+            expected_output: vec!["ok"],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/comments/only_line_comment.lox",
+            expected_result: true,
+            expected_output: vec![],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/comments/only_line_comment_and_line.lox",
+            expected_result: true,
+            expected_output: vec![],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/comments/unicode.lox",
+            expected_result: true,
+            expected_output: vec!["ok"],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/number/leading_dot.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at '.': Expect expression."],
+        },
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/print
+        TestScriptAndResult {
+            script_name: "./tests/data/print/missing_argument.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at ';': Expect expression."],
+        },
+    ] 
+} // cargo test test_parser_generic_stmt -- --exact
+
+fn get_var_script_results<'a>() -> TestScriptAndResults<'a> {    
+    vec![
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/variable
+        TestScriptAndResult {
+            script_name: "./tests/data/variable/use_false_as_var.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'false': Expect variable name."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/variable/use_nil_as_var.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'nil': Expect variable name."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/variable/use_this_as_var.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'this': Expect variable name."],
+        },
+    ]
+} // cargo test test_parser_var_stmt -- --exact [--nocapture]
+
+fn get_assign_script_results<'a>() -> TestScriptAndResults<'a> {
+    // From author's https://github.com/munificent/craftinginterpreters/tree/master/test/assignment
+    vec![
+        TestScriptAndResult { 
+            script_name: "./tests/data/assignment/grouping.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at '=': Invalid assignment target."],
+        }, 
+        TestScriptAndResult {
+            script_name: "./tests/data/assignment/infix_operator.lox",
+            expected_result: false,
+            expected_output: vec!["[line 3] Error at '=': Invalid assignment target."],
+        }, 
+        TestScriptAndResult {
+            script_name: "./tests/data/assignment/prefix_operator.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at '=': Invalid assignment target."],
+        },
+    ]
+} // cargo test test_parser_assign_stmt -- --exact [--nocapture] 
 
 #[test]
 // The test script is from 
 //     https://github.com/munificent/craftinginterpreters/blob/master/test/expressions/parse.lox
-fn parse_expr_01() {
+fn test_parser_expr_01() {
     let tokens = assert_scan_script("./tests/data/expressions/parse.lox");
 
     // Parsing test.
-    let parser = Parser::new(&tokens);
-    let res = parser.parse();
+    let mut parser = make_parser(&tokens);
+    let res = parser.parse_single_expression();
 
     assert_eq!(res.is_err(), false);
 
@@ -42,12 +136,12 @@ fn parse_expr_01() {
 // See also ./src/ast_printer.rs tests::it_works().
 // The tested expression (and expected output) is from the the section 
 //     https://craftinginterpreters.com/representing-code.html#a-not-very-pretty-printer
-fn parse_expr_02() {
+fn test_parser_expr_02() {
     let tokens = assert_scan_script("./tests/data/expressions/parse-02.lox");
 
     // Parsing test.
-    let parser = Parser::new(&tokens);
-    let res = parser.parse();
+    let mut parser = make_parser(&tokens);
+    let res = parser.parse_single_expression();
 
     assert_eq!(res.is_err(), false);
 
@@ -74,12 +168,12 @@ fn parse_expr_02() {
 // See also ./src/ast_printer.rs tests::it_works().
 // The tested expression (and expected output) is from the the section 
 //     https://craftinginterpreters.com/representing-code.html#a-not-very-pretty-printer
-fn parse_expr_03() {
+fn test_parser_expr_03() {
     let tokens = assert_scan_script("./tests/data/expressions/parse-03.lox");
 
     // Parsing test.
-    let parser = Parser::new(&tokens);
-    let res = parser.parse();
+    let mut parser = make_parser(&tokens);
+    let res = parser.parse_single_expression();
 
     assert_eq!(res.is_err(), false);
 
@@ -93,4 +187,52 @@ fn parse_expr_03() {
     // expression is. The author expected this output. 
     // 
     assert_eq!("(* (- 123.0) (group 45.67))", AstPrinter{}.print_expression(&expr).unwrap());
+}
+
+#[test]
+fn test_parser_generic_stmt() {
+    let generic_script_results = get_generic_script_results();
+
+    for entry in generic_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }    
+}
+
+#[test]
+fn test_parser_var_stmt() {
+    let var_script_results = get_var_script_results();
+
+    for entry in var_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
+}
+
+#[test]
+fn test_parser_assign_stmt() {
+    let var_script_results = get_assign_script_results();
+
+    for entry in var_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
 }
