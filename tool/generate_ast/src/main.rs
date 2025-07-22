@@ -132,12 +132,31 @@ impl GenerateAst {
         (type_part_raw.trim(), name_part_raw.trim())
     }
 
+    fn accept_pattern_matching_dispatch(file: &mut File, 
+        base_name: &str,
+        types: &Vec<&str>
+    ) -> Result<(), io::Error> {
+        for t in types {
+            // t: "Assign   : Token name, Box<Expr> value"
+            let last_colon = t.rfind(':').unwrap();
+            let (type_name, _) = t.split_at(last_colon);
+            let trimmed_type = type_name.trim();
+
+            file.write_all(format!("            {}::{}(val) => visitor.visit_{}_{}(val),\n",
+                base_name, trimmed_type, trimmed_type.to_lowercase(), 
+                base_name.to_lowercase()).as_bytes()
+            )?;
+        }
+
+        Ok(())
+    }
+
     fn define_visitor(file: &mut File,
         base_name: &str,
         types: &Vec<&str>
     ) -> Result<(), io::Error> {
         file.write_all("// Define enum\n".as_bytes())?;
-        file.write_all("#[derive(Clone)]\n".as_bytes())?;
+        file.write_all("#[derive(Debug, Clone, PartialEq)]\n".as_bytes())?;
         file.write_all(format!("pub enum {} {{\n", base_name).as_bytes())?;
         for t in types {
             // t: "Assign   : Token name, Box<Expr> value"
@@ -155,29 +174,27 @@ impl GenerateAst {
             let (type_name, _) = t.split_at(last_colon);
             let trimmed_type = type_name.trim();
 
-            file.write_all(format!("    fn visit_{0}_{1}(&self, {1}: &{2}) -> Result<T, LoxError>;\n",
+            file.write_all(format!("    fn visit_{0}_{1}(&mut self, {1}: &{2}) -> Result<T, LoxError>;\n",
                 trimmed_type.to_lowercase(), base_name.to_lowercase(), trimmed_type).as_bytes()
             )?;
         }
         file.write_all("}\n\n".as_bytes())?;
 
-        file.write_all(format!("// Implement `accept()` for `{}`\n", base_name).as_bytes())?;
+        file.write_all(format!("// Implement `accept()`, `accept_ref()` for `{}`\n", base_name).as_bytes())?;
         file.write_all(format!("impl {} {{\n", base_name).as_bytes())?;
-        file.write_all("    pub fn accept<T>(&self, visitor: &dyn Visitor<T>) -> Result<T, LoxError> {\n".as_bytes())?;
-        file.write_all("        match self {\n".as_bytes())?;
-        for t in types {
-            // t: "Assign   : Token name, Box<Expr> value"
-            let last_colon = t.rfind(':').unwrap();
-            let (type_name, _) = t.split_at(last_colon);
-            let trimmed_type = type_name.trim();
 
-            file.write_all(format!("            {}::{}(val) => visitor.visit_{}_{}(val),\n",
-                base_name, trimmed_type, trimmed_type.to_lowercase(), 
-                base_name.to_lowercase()).as_bytes()
-            )?;
-        }
-        file.write_all("        }\n".as_bytes())?;
-        file.write_all("    }\n".as_bytes())?;
+        file.write_all("    pub fn accept<T>(&mut self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxError> {\n".as_bytes())?;
+        file.write_all("        match self {\n".as_bytes())?;
+        Self::accept_pattern_matching_dispatch(file, base_name, types)?;
+        file.write_all("        }\n".as_bytes())?; // match self closing
+        file.write_all("    }\n\n".as_bytes())?; // pub fn accept() closing.
+
+        file.write_all("    pub fn accept_ref<T>(&self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxError> {\n".as_bytes())?;
+        file.write_all("        match self {\n".as_bytes())?;
+        Self::accept_pattern_matching_dispatch(file, base_name, types)?;
+        file.write_all("        }\n".as_bytes())?; // match self closing
+        file.write_all("    }\n".as_bytes())?; // pub fn accept_ref() closing.
+
         file.write_all("}\n".as_bytes())?;
 
         Ok(())
@@ -197,7 +214,7 @@ impl GenerateAst {
         let fields: Vec<&str> = field_list.split(",").map(|f| f.trim()).collect();
 
         // struct definition.
-        file.write_all("#[derive(Clone)]\n".as_bytes())?;
+        file.write_all("#[derive(Debug, Clone, PartialEq)]\n".as_bytes())?;
         file.write_all(format!("pub struct {} {{\n", class_name).as_bytes())?;
         for field in &fields {
             // Each of: "Box<Expr> left", "Token operator", "Box<Expr> right", etc.
