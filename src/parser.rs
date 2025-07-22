@@ -1,50 +1,55 @@
 /* Date Created: 02/07/2025. */
 
+use crate::stmt;
+
 use super::lox_error::LoxError;
 use super::token_type::TokenType;
 use super::token::{LiteralValue, LiteralValue::*, Token};
-
+use super::lox_error_helper::error; 
 use super::expr::*;
+use super::stmt::*;
 
 pub struct Parser<'a> {
     tokens: &'a Vec<Token>,
+    current: usize,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(tokens: &'a Vec<Token>) -> Self {
         Parser {
-            tokens
+            tokens,
+            current: 0,
         }
     }
 
-    fn peek(&self, current: usize) -> &Token {
-        &self.tokens[current]
+    fn peek(&self) -> &Token {
+        &self.tokens[self.current]
     }
     
-    fn is_at_end(&self, current: usize) -> bool {
-        self.peek(current).get_type() == TokenType::Eof
+    fn is_at_end(&self) -> bool {
+        self.peek().get_type() == TokenType::Eof
     }
 
-    fn previous(&self, current: usize) -> &Token {
-        &self.tokens[current - 1]
+    fn previous(&self) -> &Token {
+        &self.tokens[self.current - 1]
     }
 
-    fn advance(&self, current: &mut usize) -> &Token {
-        if !self.is_at_end(*current) { *current += 1; };
+    fn advance(&mut self) -> &Token {
+        if !self.is_at_end() { self.current += 1; };
 
-        self.previous(*current)
+        self.previous()
     }
 
-    fn check(&self, current: usize, type_: &TokenType) -> bool {
-        if self.is_at_end(current) { return false };
+    fn check(&self, type_: &TokenType) -> bool {
+        if self.is_at_end() { return false };
 
-        self.peek(current).get_type() == *type_
+        self.peek().get_type() == *type_
     }
 
-    fn match_token(&self, current: &mut usize, types: &[TokenType]) -> bool {
+    fn match_token(&mut self, types: &[TokenType]) -> bool {
         for t in types {
-            if self.check(*current, t) {
-                self.advance(current);
+            if self.check(t) {
+                self.advance();
                 return true;
             }
         }
@@ -52,18 +57,13 @@ impl<'a> Parser<'a> {
         false
     }
 
-    fn error(&self, token: &Token, message: &str) -> LoxError {
-        LoxError::new(token.get_line(), &format!("{}", message))
-    }
-
-    fn consume(&self, 
-        current: &mut usize, 
+    fn consume(&mut self, 
         type_: &TokenType, 
         message: &str) -> Result<&Token, LoxError> {
-        if self.check(*current, type_) {
-            Ok(self.advance(current))
+        if self.check(type_) {
+            Ok(self.advance())
         } else {
-            Err(self.error(self.peek(*current), message))
+            Err(error(self.peek(), message))
         }
     }
 
@@ -72,126 +72,244 @@ impl<'a> Parser<'a> {
         Expr::Literal(Literal::new(value))
     }    
 
-    fn primary(&self, current: &mut usize) -> Result<Expr, LoxError> {
-        if self.match_token(current, &[TokenType::False]) {
+    fn primary(&mut self) -> Result<Expr, LoxError> {
+        if self.match_token(&[TokenType::False]) {
             return Ok(self.literal_expr(Boolean(false)))
         }
-        if self.match_token(current, &[TokenType::True]) {
+        if self.match_token(&[TokenType::True]) {
             return Ok(self.literal_expr(Boolean(true)))
         }
-        if self.match_token(current, &[TokenType::Nil]) {
+        if self.match_token(&[TokenType::Nil]) {
             return Ok(self.literal_expr(Nil))
         }
 
-        if self.match_token(current, &[TokenType::String]) {
-            if let Some(LiteralValue::String(s)) = self.previous(*current).get_literal() {
+        if self.match_token(&[TokenType::String]) {
+            if let Some(LiteralValue::String(s)) = self.previous().get_literal() {
                 return Ok(self.literal_expr(String(s.clone())));
             }
-            return Err(self.error(self.previous(*current), "Expected a string value"));
+            return Err(error(self.previous(), "Expected a string value"));
         }
 
-        if self.match_token(current, &[TokenType::Number]) {
-            if let Some(LiteralValue::Number(n)) = self.previous(*current).get_literal() {
+        if self.match_token(&[TokenType::Number]) {
+            if let Some(LiteralValue::Number(n)) = self.previous().get_literal() {
                 return Ok(self.literal_expr(Number(*n)));
             }
-            return Err(self.error(self.previous(*current), "Expected a number value"));
+            return Err(error(self.previous(), "Expected a number value"));
+        }
+
+        if self.match_token(&[TokenType::Identifier]) {
+            return Ok(Expr::Variable(Variable::new(self.previous().clone())))
         }
         
-        if self.match_token(current, &[TokenType::LeftParen]) {
-            let expr = self.expression(current)?;
-            self.consume(current, &TokenType::RightParen, "Expect ')' after expression.")?;
+        if self.match_token(&[TokenType::LeftParen]) {
+            let expr = self.expression()?;
+            self.consume(&TokenType::RightParen, "Expect ')' after expression.")?;
             return Ok(Expr::Grouping(Grouping::new(expr)));
         }
 
-        Err(self.error(self.peek(*current), "Expect expression."))
+        Err(error(self.peek(), "Expect expression."))
     }
 
-    fn unary(&self, current: &mut usize) -> Result<Expr, LoxError> {
-        if self.match_token(current, &[TokenType::Bang, TokenType::Minus]) {
-            let operator = self.previous(*current).clone();            
-            let right = self.unary(current)?;
+    fn unary(&mut self) -> Result<Expr, LoxError> {
+        if self.match_token(&[TokenType::Bang, TokenType::Minus]) {
+            let operator = self.previous().clone();            
+            let right = self.unary()?;
             Ok(Expr::Unary(Unary::new(operator, right)))
         } else {
-            self.primary(current)
+            self.primary()
         }
     }    
 
-    fn factor(&self, current: &mut usize) -> Result<Expr, LoxError> {
-        let mut expr= self.unary(current)?;
+    fn factor(&mut self) -> Result<Expr, LoxError> {
+        let mut expr= self.unary()?;
 
-        while self.match_token(current, &[TokenType::Slash, TokenType::Star]) {
-            let operator = self.previous(*current).clone();
-            let right = self.unary(current)?;
+        while self.match_token(&[TokenType::Slash, TokenType::Star]) {
+            let operator = self.previous().clone();
+            let right = self.unary()?;
             expr = Expr::Binary(Binary::new(expr, operator, right));
         }
 
         Ok(expr)
     }
 
-    fn term(&self, current: &mut usize) -> Result<Expr, LoxError> {
-        let mut expr = self.factor(current)?;
+    fn term(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.factor()?;
 
-        while self.match_token(current, &[TokenType::Minus, TokenType::Plus]) {
-            let operator = self.previous(*current).clone();
-            let right = self.factor(current)?;
+        while self.match_token(&[TokenType::Minus, TokenType::Plus]) {
+            let operator = self.previous().clone();
+            let right = self.factor()?;
             expr = Expr::Binary(Binary::new(expr, operator, right));
         }
 
         Ok(expr)
     }
 
-    fn comparison(&self, current: &mut usize) -> Result<Expr, LoxError> {
-        let mut expr = self.term(current)?;
+    fn comparison(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.term()?;
 
-        while self.match_token(current, &[
+        while self.match_token(&[
                 TokenType::Greater, TokenType::GreaterEqual, 
                 TokenType::Less, TokenType::LessEqual]) {
-            let operator = self.previous(*current).clone();
-            let right = self.term(current)?;
+            let operator = self.previous().clone();
+            let right = self.term()?;
             expr = Expr::Binary(Binary::new(expr, operator, right));
         }
 
         Ok(expr)        
     }
 
-    fn equality(&self, current: &mut usize) -> Result<Expr, LoxError> {
-        let mut expr = self.comparison(current)?;
+    fn equality(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.comparison()?;
 
-        while self.match_token(current, &[TokenType::BangEqual, TokenType::EqualEqual]) {
-            let operator = self.previous(*current).clone();
-            let right = self.comparison(current)?;
+        while self.match_token(&[TokenType::BangEqual, TokenType::EqualEqual]) {
+            let operator = self.previous().clone();
+            let right = self.comparison()?;
             expr = Expr::Binary(Binary::new(expr, operator, right));
         }
 
         Ok(expr)
     }
 
-    fn expression(&self, current: &mut usize) -> Result<Expr, LoxError> {
-        self.equality(current)
+    fn expression(&mut self) -> Result<Expr, LoxError> {
+        // self.equality()
+
+        // https://craftinginterpreters.com/statements-and-state.html#assignment-syntax
+        self.assignment()
     }
 
-    fn synchronize(&self, current: &mut usize) {
-        self.advance(current);
+    fn declaration(&mut self) -> Result<Stmt, LoxError> {
+        if self.match_token(&[TokenType::Var]) {
+            match self.var_declaration() {
+                Ok(val) => return Ok(val),
+                Err(err) => {
+                    self.synchronize();
+                    Err(err)
+                }
+            }
+        } else {
+            match self.statement() {
+                Ok(val) => Ok(val),
+                Err(err) => {
+                    self.synchronize();
+                    Err(err)
+                }
+            }
+        }
+    }
+    
+    fn synchronize(&mut self) {
+        self.advance();
 
-        while !self.is_at_end(*current) {
-            if self.previous(*current).get_type() == TokenType::Semicolon {
+        while !self.is_at_end() {
+            if self.previous().get_type() == TokenType::Semicolon {
                 return;
             }
 
-            match self.peek(*current).get_type() {
+            match self.peek().get_type() {
                 TokenType::Class | TokenType::Fun | TokenType::Var |
                 TokenType::For | TokenType::If | TokenType::While |
                 TokenType::Print | TokenType::Return => { return; }
                 _ => (),
             }
 
-            self.advance(current);
+            self.advance();
         }
     }
 
-    pub fn parse(&self) -> Result<Expr, LoxError> {
-        let mut current: usize = 0;
+    fn print_statement(&mut self) -> Result<Stmt, LoxError> {
+        let value: Expr = self.expression()?;
+        self.consume(&TokenType::Semicolon, "Expect ';' after value.")?;
 
-        self.expression(&mut current)
+        Ok(stmt::Stmt::Print(stmt::Print::new(value)))
+    }
+
+    fn var_declaration(&mut self) -> Result<Stmt, LoxError> {
+        // Clone the token immediately to break the borrow
+        let name = self.consume(&TokenType::Identifier, "Expect variable name.")?.clone();
+
+        let mut initializer = None;
+        if self.match_token(&[TokenType::Equal]) {
+            initializer = Some(self.expression()?);
+        }
+
+        self.consume(&TokenType::Semicolon, "Expect ';' after variable declaration.")?;
+
+        Ok(stmt::Stmt::Var(stmt::Var::new(name, initializer)))
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, LoxError> {
+        let expr: Expr = self.expression()?;
+        self.consume(&TokenType::Semicolon, "Expect ';' after expression.")?;
+
+        Ok(stmt::Stmt::Expression(stmt::Expression::new(expr)))
+    }
+
+    // The author's note:
+    //     Having block() return the raw list of statements and leaving it to 
+    //     statement() to wrap the list in a Stmt.Block looks a little odd. I did 
+    //     it that way because we’ll reuse block() later for parsing function bodies 
+    //     and we don’t want that body wrapped in a Stmt.Block.
+    // See: https://craftinginterpreters.com/statements-and-state.html#scope
+    //
+    // declaration() handles both statements and declarations (like var), which is 
+    // exactly what we want inside blocks.
+    fn block(&mut self) -> Result<Vec<Stmt>, LoxError> {
+        let mut statements: Vec<Stmt> = Vec::new();
+
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            statements.push(self.declaration()?);
+        }
+
+        self.consume(&TokenType::RightBrace, "Expect '}' after block.")?;
+        Ok(statements)
+    }
+
+    fn assignment(&mut self) -> Result<Expr, LoxError> {
+        let expr: Expr = self.equality()?;
+
+        if self.match_token(&[TokenType::Equal]) {
+            let equals: Token = self.previous().clone();
+            let value: Expr = self.assignment()?;
+
+            match expr {
+                Expr::Variable(var) => {
+                    return Ok(Expr::Assign(Assign::new(var.get_name().clone(), Box::new(value))))
+                }
+                _ => {
+                    return Err(error(&equals, "Invalid assignment target."))
+                }
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn statement(&mut self) -> Result<Stmt, LoxError> {
+        if self.match_token(&[TokenType::Print]) {
+            self.print_statement()
+        } else if self.match_token(&[TokenType::LeftBrace]) {
+            Ok(stmt::Stmt::Block(stmt::Block::new(self.block()?)))
+        } else {
+            self.expression_statement()
+        }
+    }
+
+    // Chapter 06 version: needed for the tests.
+    #[allow(dead_code)]
+    pub fn parse_single_expression(&mut self) -> Result<Expr, LoxError> {
+        self.expression()
+    }
+
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, LoxError> {
+        let mut statements: Vec<Stmt> = vec![];
+        while !self.is_at_end() {
+            // https://craftinginterpreters.com/statements-and-state.html#parsing-statements
+            // statements.push(self.statement()?);
+
+            // https://craftinginterpreters.com/statements-and-state.html#global-variables
+            statements.push(self.declaration()?);
+        }
+
+        Ok(statements)
     }
 }
