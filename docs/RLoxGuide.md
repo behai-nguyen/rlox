@@ -6,6 +6,21 @@ A brief guide to the Lox language, documenting only the features currently imple
 
 For a complete documentation, please see the author original [The Lox Language](https://craftinginterpreters.com/the-lox-language.html) chapter.
 
+## Table of Contents
+
+* [Data Types](#data-types)
+* [Keywords](#keywords)
+* [Expressions and Operators](#expressions-and-operators)
+    - [Binary Expressions](#binary-expressions)
+    - [Unary Expressions](#unary-expressions)
+    - [Literal Expressions](#literal-expressions)
+* [Global Variables, Assignment and Scope](#global-variables-assignment-and-scope)
+    - [Example 1](#example-1)
+    - [Example 2](#example-2)
+    - [Example 3](#example-3)
+    - [Example 4](#example-4)
+    - [Example 5](#example-5)
+
 ## Data Types
 
 See also [Data Types](https://craftinginterpreters.com/the-lox-language.html#data-types).
@@ -101,5 +116,98 @@ Note: The `+` operator supports string concatenation only when both operands are
 | String    | "abc def"; | "abc def" |
 | Boolean   | false; | false |
 | Nil       | nil; | nil |
+
+## Global Variables, Assignment, and Scope
+
+The following examples demonstrate valid variable declarations, assignments, and scope behavior in Lox.
+
+### Example 1
+
+```lox
+var result;
+result = -(((4.5 / 2) * 2) * 1.25);
+print result;
+```
+
+### Example 2
+
+```lox
+var result;
+{
+    result = -(((4.5 / 2) * 2) * 1.25);
+    print result;
+}
+```
+
+### Example 3
+
+```lox
+var result;
+{
+    var factor = 2;
+    result = -(((4.5 / factor) * factor) * 1.25);
+}
+print result;
+```
+
+### Example 4
+
+```lox
+{
+var s1 = "Mắt trừng gửi mộng qua biên giới";
+var s2 = "Đêm mơ Hà Nội dáng kiều thơm";
+
+    {
+        print s1;
+        print s2;
+
+        var s1 = "Rải rác biên cương mồ viễn xứ";
+        var s2 = "Chiến trường đi chẳng tiếc đời xanh";
+
+        print s1;
+        print s2;
+    }
+
+print s1;
+print s2;
+}
+```
+
+**Output:**
+
+```
+Mắt trừng gửi mộng qua biên giới
+Đêm mơ Hà Nội dáng kiều thơm
+Rải rác biên cương mồ viễn xứ
+Chiến trường đi chẳng tiếc đời xanh
+Mắt trừng gửi mộng qua biên giới
+Đêm mơ Hà Nội dáng kiều thơm
+```
+
+### Example 5
+
+End-of-chapter example from [Chapter 8: Statements and State](https://craftinginterpreters.com/statements-and-state.html):
+
+```lox
+var a = "global a";
+var b = "global b";
+var c = "global c";
+{
+    var a = "outer a";
+    var b = "outer b";
+    {
+        var a = "inner a";
+        print a;
+        print b;
+        print c;
+    }
+    print a;
+    print b;
+    print c;
+}
+print a;
+print b;
+print c;
+```
 
 > This guide will expand as more of the Lox language is implemented—including statements, functions, and classes.
