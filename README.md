@@ -38,7 +38,7 @@ To exit, simply press ``Enter`` without entering anything.
 ### To Run with a Lox Script File
 
 ```
-$ cargo run --release ./tests/data/expressions/evaluate.lox
+$ cargo run --release ./tests/data/variable/shadow_global.lox
 ```
 
 If there are no errors, you will see the parser and the evaluation (interpreter) results printed out.
@@ -80,6 +80,16 @@ git clone -b v0.2.0 https://github.com/behai-nguyen/rlox.git
 ```
 
 In this post, I briefly describe the implementation of the code in Chapter 6: <a href="https://craftinginterpreters.com/parsing-expressions.html" title="Parsing Expressions" target="_blank">Parsing Expressions</a>, and Chapter 7: <a href="https://craftinginterpreters.com/evaluating-expressions.html" title="Evaluating Expressions" target="_blank">Evaluating Expressions</a>.
+
+5. [rlox: A Rust Implementation of “Crafting Interpreters” – Global Variables, Assignment, and Scope](https://behainguyen.wordpress.com/2025/07/22/rlox-a-rust-implementation-of-crafting-interpreters-global-variables-assignment-and-scope/)
+
+The code version for the above post has been tagged with **v0.3.0**. It can be cloned with:
+  
+```
+git clone -b v0.3.0 https://github.com/behai-nguyen/rlox.git
+```
+
+I have completed Chapter 8: <a href="https://craftinginterpreters.com/statements-and-state.html" title="Statements and State" target="_blank">Statements and State</a>. The following additional statements and expressions have been implemented: <code>Stmt::Expression</code>, <code>Stmt::Print</code>, <code>Stmt::Var</code>, <code>Expr::Variable</code>, <code>Expr::Assign</code> and <code>Stmt::Block</code>. We can now declare global variables, define scoped variables, and assign values to variables. This post discusses some implementation issues that deserve attention.
 
 ## License
 [MIT license](http://www.opensource.org/licenses/mit-license.php)
