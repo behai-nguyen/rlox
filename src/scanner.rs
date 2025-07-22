@@ -18,6 +18,7 @@
 use std::collections::HashMap;
 
 use super::lox_error::LoxError;
+use super::lox_error_helper::scanner_error; 
 use super::scanner_index::ScannerIndex;
 use super::token::{LiteralValue, Token};
 use super::token_type::TokenType;
@@ -26,34 +27,36 @@ type KeywordsMap = HashMap<&'static str, TokenType>;
 
 pub struct Scanner<'a> {
     source: &'a str,
+    indexes: ScannerIndex,
 }
 
 impl<'a> Scanner<'a> {
     pub fn new(source: &'a str) -> Self {
         Scanner {
-            source
+            source,
+            indexes: ScannerIndex::new(),
         }
     }
 
-    fn advance(&self, indexes: &mut ScannerIndex) -> Option<char> {
-        if let Some(c) = self.source.chars().nth(indexes.get_current()) {
-            indexes.inc_lexeme_indexes(c.len_utf8());
-            return Some(c);
+    fn advance(&mut self) -> Option<char> {
+        if let Some(c) = self.source.chars().nth(self.indexes.get_current()) {
+            self.indexes.inc_lexeme_indexes(c.len_utf8());
+            Some(c)
+        } else {
+            None
         }
-
-        None
     }
 
-    fn is_at_end(&self, indexes: &mut ScannerIndex) -> bool {
-        indexes.get_current() >= self.source.chars().count()
+    fn is_at_end(&mut self) -> bool {
+        self.indexes.get_current() >= self.source.chars().count()
     }    
 
-    fn match_char(&self, indexes: &mut ScannerIndex, expected: char) -> bool {
-        if self.is_at_end(indexes) {
+    fn match_char(&mut self, expected: char) -> bool {
+        if self.is_at_end() {
             return false;
         }
 
-        match self.source.chars().nth(indexes.get_current()) {
+        match self.source.chars().nth(self.indexes.get_current()) {
             Some(c) => {
                 if c != expected {
                     return false;
@@ -63,65 +66,57 @@ impl<'a> Scanner<'a> {
             None => return false
         }
 
-        indexes.inc_lexeme_indexes(expected.len_utf8());
+        self.indexes.inc_lexeme_indexes(expected.len_utf8());
         true
     }
 
-    fn peek(&self, indexes: &mut ScannerIndex) -> char {
-        if self.is_at_end(indexes) {
+    fn peek(&mut self) -> char {
+        if self.is_at_end() {
             return '\0';
         }
 
-        if let Some(c) = self.source.chars().nth(indexes.get_current()) {
-            return c;
+        if let Some(c) = self.source.chars().nth(self.indexes.get_current()) {
+            c
+        } else {
+            // Not in original https://craftinginterpreters.com/scanning.html#the-scanner-class
+            '\0'
         }
-
-        // Not in original https://craftinginterpreters.com/scanning.html#the-scanner-class
-        '\0'
     }
 
-    fn peek_next(&self, indexes: &mut ScannerIndex) -> char {
-        if (indexes.get_current() + 1) >= self.source.len() {
+    fn peek_next(&mut self) -> char {
+        if (self.indexes.get_current() + 1) >= self.source.len() {
             return '\0';
         }
 
-        if let Some(c) = self.source.chars().nth(indexes.get_current() + 1) {
-            return c;
+        if let Some(c) = self.source.chars().nth(self.indexes.get_current() + 1) {
+            c
+        } else {
+            // Not in https://craftinginterpreters.com/scanning.html#the-scanner-class
+            '\0'
         }
-
-        // Not in https://craftinginterpreters.com/scanning.html#the-scanner-class
-        '\0'
     }
 
-    fn string(&self, 
-        indexes: &mut ScannerIndex, 
-        lst: &mut Vec<Token>) -> Result<(), LoxError> {
+    fn string(&mut self, lst: &mut Vec<Token>) -> Result<(), LoxError> {
 
-        while (self.peek(indexes) != '"') & !self.is_at_end(indexes) {
-            if self.peek(indexes) == '\n' {
-                indexes.inc_line();
+        while (self.peek() != '"') && !self.is_at_end() {
+            if self.peek() == '\n' {
+                self.indexes.inc_line();
             }
 
-            self.advance(indexes);
+            self.advance();
         }
 
-        if self.is_at_end(indexes) {
-            return Err(LoxError::new(indexes.get_line(), "Unterminated string."));
+        if self.is_at_end() {
+            return Err(scanner_error(self.indexes.get_line(), self.peek(), "Unterminated string."));
         }
 
         // The closing ".
-        self.advance(indexes);
+        self.advance();
 
         // Trim the surrounding quotes.
-        let value = self.source[indexes.get_start() + 1..indexes.get_byte_count() - 1].to_string();
+        let value = self.source[self.indexes.get_start() + 1..self.indexes.get_byte_count() - 1].to_string();
 
-        #[cfg(debug_assertions)]
-        {
-            println!("string():\n{0}org. value: {1}\n{0}type: {2}\n", 
-                      "    ", value, TokenType::String);
-        }
-
-        self.add_token_with_literal(indexes, lst, TokenType::String, 
+        self.add_token_with_literal(lst, TokenType::String, 
             Some(LiteralValue::String(value)));
 
         Ok(())
@@ -131,22 +126,22 @@ impl<'a> Scanner<'a> {
         (c >= '0') & (c <= '9')
     }
 
-    fn number(&self, indexes: &mut ScannerIndex, lst: &mut Vec<Token>) -> Result<(), LoxError> {
-        while Self::is_digit(self.peek(indexes)) {
-            self.advance(indexes);
+    fn number(&mut self, lst: &mut Vec<Token>) -> Result<(), LoxError> {
+        while Self::is_digit(self.peek()) {
+            self.advance();
         }
 
         // Look for a fractional part.        
-        if (self.peek(indexes) == '.') & Self::is_digit(self.peek_next(indexes)) {
+        if (self.peek() == '.') && Self::is_digit(self.peek_next()) {
             // Consume the "."
-            self.advance(indexes);
+            self.advance();
 
-            while Self::is_digit(self.peek(indexes)) {
-                self.advance(indexes);
+            while Self::is_digit(self.peek()) {
+                self.advance();
             }
         }
 
-        let mut str = self.source[indexes.get_start()..indexes.get_byte_count()].to_string();
+        let mut str = self.source[self.indexes.get_start()..self.indexes.get_byte_count()].to_string();
         if !str.contains('.') {
             str.push_str(".0");
         } else if str.ends_with('.') {
@@ -155,15 +150,9 @@ impl<'a> Scanner<'a> {
 
         let value = str
             .parse::<f64>()
-            .map_err(|e| LoxError::new(indexes.get_line(), &format!("Failed to parse float: {}", e)))?;
+            .map_err(|e| scanner_error(self.indexes.get_line(), self.peek(), &format!("Failed to parse float: {}", e)))?;
 
-        #[cfg(debug_assertions)]
-        {
-            println!("number():\n{0}org. str: {1}\n{0}type: {2}\n", 
-                      "    ", str, TokenType::Number);
-        }
-
-        self.add_token_with_literal(indexes, lst, TokenType::Number, 
+        self.add_token_with_literal(lst, TokenType::Number, 
             Some(LiteralValue::Number(value)));
 
         Ok(())
@@ -179,58 +168,40 @@ impl<'a> Scanner<'a> {
         Self::is_alpha(c) || Self::is_digit(c)
     }
 
-    fn identifier(&self, indexes: &mut ScannerIndex, keywords: &KeywordsMap, lst: &mut Vec<Token>) {        
-        while Self::is_alpha_numeric(self.peek(indexes)) {
-            self.advance(indexes);
+    fn identifier(&mut self, keywords: &KeywordsMap, lst: &mut Vec<Token>) {        
+        while Self::is_alpha_numeric(self.peek()) {
+            self.advance();
         }
 
-        #[cfg(debug_assertions)] { println!("identifier():"); }
-
-        let keyword = self.source[indexes.get_start()..indexes.get_byte_count()].to_string();
-
-        #[cfg(debug_assertions)] { println!("    keyword: {keyword}"); }
+        let keyword = self.source[self.indexes.get_start()..self.indexes.get_byte_count()].to_string();
 
         if let Some(token) = keywords.get(keyword.as_str()) {
-            #[cfg(debug_assertions)] { println!("    type: {token}"); }
-
-            self.add_token(indexes, lst, token.clone());
+            self.add_token(lst, token.clone());
         } else {
-            #[cfg(debug_assertions)] { println!("    type: {}", TokenType::Identifier); }
-
-            self.add_token(indexes, lst, TokenType::Identifier);
+            self.add_token(lst, TokenType::Identifier);
         }
     }
 
     fn add_token(&self, 
-        indexes: &mut ScannerIndex,
         lst: &mut Vec<Token>, 
         type_: TokenType) {
-        self.add_token_with_literal(indexes, lst, type_, None);
+        self.add_token_with_literal(lst, type_, None);
     }
 
     fn add_token_with_literal(&self, 
-        indexes: &mut ScannerIndex,
         lst: &mut Vec<Token>,
         type_: TokenType, 
         literal: Option<LiteralValue>) {
-            let lex = self.source[indexes.get_start()..indexes.get_byte_count()].to_string();
-            #[cfg(debug_assertions)] 
-            {
-                println!("add_token_with_literal():\n{0}type: {1}\n{0}lex: \
-                          [{2}]\n{0}literal: {3:?}\n{0}start: {4} - byte count: {5}",
-                          "    ", type_, lex, literal, indexes.get_start(), indexes.get_byte_count());
-            }
-
-            lst.push(Token::new(type_, lex, literal, indexes.get_line()));
+            let lex = self.source[self.indexes.get_start()..self.indexes.get_byte_count()].to_string();
+            lst.push(Token::new(type_, lex, literal, self.indexes.get_line()));
     }
 
-    fn scan_token(&self, 
-        indexes: &mut ScannerIndex, 
+    fn scan_token(&mut self, 
         keywords: &KeywordsMap, 
         lst: &mut Vec<Token>) -> Result<(), LoxError> {
         let c: char;
 
-        if let Some(val) = self.advance(indexes) {
+        if let Some(val) = self.advance() {
             c = val;
         } else {
             // Not in https://craftinginterpreters.com/scanning.html#the-scanner-class
@@ -238,61 +209,60 @@ impl<'a> Scanner<'a> {
         }
 
         match c {
-            '(' => self.add_token(indexes, lst, TokenType::LeftParen),
-            ')' => self.add_token(indexes, lst, TokenType::RightParen),
-            '{' => self.add_token(indexes, lst, TokenType::LeftBrace),
-            '}' => self.add_token(indexes, lst, TokenType::RightBrace),
-            ',' => self.add_token(indexes, lst, TokenType::Comma),
-            '.' => self.add_token(indexes, lst, TokenType::Dot),
-            '-' => self.add_token(indexes, lst, TokenType::Minus),
-            '+' => self.add_token(indexes, lst, TokenType::Plus),
-            ';' => self.add_token(indexes, lst, TokenType::Semicolon),
-            '*' => self.add_token(indexes, lst, TokenType::Star),
+            '(' => self.add_token(lst, TokenType::LeftParen),
+            ')' => self.add_token(lst, TokenType::RightParen),
+            '{' => self.add_token(lst, TokenType::LeftBrace),
+            '}' => self.add_token(lst, TokenType::RightBrace),
+            ',' => self.add_token(lst, TokenType::Comma),
+            '.' => self.add_token(lst, TokenType::Dot),
+            '-' => self.add_token(lst, TokenType::Minus),
+            '+' => self.add_token(lst, TokenType::Plus),
+            ';' => self.add_token(lst, TokenType::Semicolon),
+            '*' => self.add_token(lst, TokenType::Star),
 
             '!' => {
-                let type_ = if self.match_char(indexes, '=') { TokenType::BangEqual } else { TokenType::Bang };
-                self.add_token(indexes, lst, type_);
+                let type_ = if self.match_char('=') { TokenType::BangEqual } else { TokenType::Bang };
+                self.add_token(lst, type_);
             }
 
             '=' => {
-                let type_ = if self.match_char(indexes, '=') { TokenType::EqualEqual } else { TokenType::Equal };
-                self.add_token(indexes, lst, type_);
+                let type_ = if self.match_char('=') { TokenType::EqualEqual } else { TokenType::Equal };
+                self.add_token(lst, type_);
             }
 
             '<' => {
-                let type_ = if self.match_char(indexes, '=') { TokenType::LessEqual } else { TokenType::Less };
-                self.add_token(indexes, lst, type_);
+                let type_ = if self.match_char('=') { TokenType::LessEqual } else { TokenType::Less };
+                self.add_token(lst, type_);
             }
 
             '>' => {
-                let type_ = if self.match_char(indexes, '=') { TokenType::GreaterEqual } else { TokenType::Greater };
-                self.add_token(indexes, lst, type_);
+                let type_ = if self.match_char('=') { TokenType::GreaterEqual } else { TokenType::Greater };
+                self.add_token(lst, type_);
             }
 
             '/' => {
-                if self.match_char(indexes, '/') {
-                    while (self.peek(indexes) != '\n') & !self.is_at_end(indexes) {
-                        self.advance(indexes);
+                if self.match_char('/') {
+                    while (self.peek() != '\n') && !self.is_at_end() {
+                        self.advance();
                     }
                 } else {
-                    self.add_token(indexes, lst, TokenType::Slash);
+                    self.add_token(lst, TokenType::Slash);
                 }
             }
 
             ' ' | '\r' | '\t' => {},
 
-            '\n' => indexes.inc_line(),
+            '\n' => self.indexes.inc_line(),
 
-            '"' => self.string(indexes, lst)?,
+            '"' => self.string(lst)?,
 
             _ => {
                 if Self::is_digit(c) {
-                    self.number(indexes, lst)?;
+                    self.number(lst)?;
                 } else if Self::is_alpha(c) {
-                    self.identifier(indexes, keywords, lst);
+                    self.identifier(keywords, lst);
                 } else {
-                    return Err(LoxError::new(indexes.get_line(), 
-                        &format!("Unexpected character: {}.", c)));
+                    return Err(scanner_error(self.indexes.get_line(), c,  &format!("Unexpected character: {}.", c)));
                 }
             }
         }
@@ -324,21 +294,19 @@ impl<'a> Scanner<'a> {
         keywords
     }
 
-    pub fn scan_tokens(&self) -> Result<Vec<Token>, LoxError> {
-        let mut indexes = ScannerIndex::new();
-
+    pub fn scan_tokens(&mut self) -> Result<Vec<Token>, LoxError> {
         let keywords: KeywordsMap = Self::create_keywords_map();
 
         let mut tokens = Vec::<Token>::new();
 
-        while !self.is_at_end(&mut indexes) {
+        while !self.is_at_end() {
             // We are at the beginning of the next lexeme.
-            let _ = &indexes.set_start(indexes.get_byte_count());
+            let _ = &self.indexes.set_start(self.indexes.get_byte_count());
  
-            self.scan_token(&mut indexes, &keywords, &mut tokens)?;
+            self.scan_token(&keywords, &mut tokens)?;
         }
 
-        tokens.push(Token::new(TokenType::Eof, "".to_string(), None, indexes.get_line()));
+        tokens.push(Token::new(TokenType::Eof, "".to_string(), None, self.indexes.get_line()));
         Ok(tokens)
     }
 }
