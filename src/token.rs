@@ -7,7 +7,7 @@ use std::fmt;
 
 use super::token_type::TokenType;
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum LiteralValue {
     Number(f64),
     String(String),
@@ -15,7 +15,7 @@ pub enum LiteralValue {
     Nil,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     type_: TokenType,
     lexeme: String,
