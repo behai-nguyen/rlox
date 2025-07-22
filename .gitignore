@@ -4,4 +4,5 @@ Cargo.lock
 /.vscode
 /works
 /tmp
+/tool/generate_ast/target
 ptree.sh
