@@ -1,0 +1,6 @@
+// Script is taken from the following section:
+// https://craftinginterpreters.com/statements-and-state.html#executing-statements
+
+print "one";
+print true;
+print 2 + 1;

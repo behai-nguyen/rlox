@@ -1,0 +1,5 @@
+// Try UTF-8.
+// https://craftinginterpreters.com/statements-and-state.html
+
+print "Mắt trừng gửi mộng qua biên giới";
+print "Đêm mơ Hà Nội dáng kiều thơm";

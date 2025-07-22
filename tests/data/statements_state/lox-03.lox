@@ -1,0 +1,5 @@
+// This script is to test the code implemented in:
+// https://craftinginterpreters.com/statements-and-state.html#global-variables
+
+var beverage = "espresso";
+print beverage;
