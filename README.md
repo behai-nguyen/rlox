@@ -17,10 +17,11 @@ Clone the repository to your local machine:
 $ git clone https://github.com/behai-nguyen/rlox.git
 ```
 
-Change to the ``rlox`` directory. The application can be run interactively or with a Lox script file.
+Change to the ``rlox`` directory. <!-- The application can be run interactively or with a Lox script file. -->
 
 💥 The application's behavior will evolve as development progresses. As a result, the discussions below will be updated accordingly.
 
+<!--
 At this stage, the parser can only parse expressions. Please refer to the `RLox Language Guide`'s [Expressions and Operators](./docs/RLoxGuide.md#expressions-and-operators) for valid expressions.
 
 ### To Run Interactively
@@ -36,12 +37,13 @@ Currently, inputs are treated independently, meaning each new input has no relat
 To exit, simply press ``Enter`` without entering anything.
 
 ### To Run with a Lox Script File
+-->
 
 ```
-$ cargo run --release ./tests/data/variable/shadow_global.lox
+$ cargo run --release ./tests/data/for/book_end_section.lox
 ```
 
-If there are no errors, you will see the parser and the evaluation (interpreter) results printed out.
+If there are no errors, you will see the <!-- parser and the evaluation (interpreter) --> results printed out.
 
 ## Related post(s)
 
@@ -90,6 +92,16 @@ git clone -b v0.3.0 https://github.com/behai-nguyen/rlox.git
 ```
 
 I have completed Chapter 8: <a href="https://craftinginterpreters.com/statements-and-state.html" title="Statements and State" target="_blank">Statements and State</a>. The following additional statements and expressions have been implemented: <code>Stmt::Expression</code>, <code>Stmt::Print</code>, <code>Stmt::Var</code>, <code>Expr::Variable</code>, <code>Expr::Assign</code> and <code>Stmt::Block</code>. We can now declare global variables, define scoped variables, and assign values to variables. This post discusses some implementation issues that deserve attention.
+
+6. [rlox: A Rust Implementation of “Crafting Interpreters” – Control Flow](https://behainguyen.wordpress.com/2025/07/25/rlox-a-rust-implementation-of-crafting-interpreters-control-flow/)
+
+The code version for the above post has been tagged with **v0.4.0**. It can be cloned with:
+  
+```
+git clone -b v0.4.0 https://github.com/behai-nguyen/rlox.git
+```
+
+This is Chapter 8: <a href="https://craftinginterpreters.com/control-flow.html" title="Control Flow" target="_blank">Control Flow</a>. The following additional statements and expressions have been implemented: <code>Stmt::If</code>, <code>Expr::Logical</code>, and <code>Stmt::While</code>. Lox now supports <code>if</code>, <code>else</code>, <code>and</code>, <code>or</code>, <code>while</code>, and <code>for</code>. Despite this long list of new features, the implementation remains fairly straightforward.
 
 ## License
 [MIT license](http://www.opensource.org/licenses/mit-license.php)
