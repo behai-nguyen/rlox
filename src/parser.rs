@@ -170,9 +170,31 @@ impl<'a> Parser<'a> {
         Ok(expr)
     }
 
-    fn expression(&mut self) -> Result<Expr, LoxError> {
-        // self.equality()
+    fn and(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.equality()?;
 
+        while self.match_token(&[TokenType::And]) {
+            let operator = self.previous().clone();
+            let right = self.equality()?;
+            expr = Expr::Logical(Logical::new(expr, operator, right));
+        }
+
+        Ok(expr)
+    }
+
+    fn or(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.and()?;
+
+        while self.match_token(&[TokenType::Or]) {
+            let operator = self.previous().clone();
+            let right = self.and()?;
+            expr = Expr::Logical(Logical::new(expr, operator, right));
+        }
+
+        Ok(expr)
+    }
+
+    fn expression(&mut self) -> Result<Expr, LoxError> {
         // https://craftinginterpreters.com/statements-and-state.html#assignment-syntax
         self.assignment()
     }
@@ -216,6 +238,22 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn if_statement(&mut self) -> Result<Stmt, LoxError> {
+        self.consume(&TokenType::LeftParen, "Expect '(' after 'if'.")?;
+        let condition: Expr = self.expression()?;
+        self.consume(&TokenType::RightParen, "Expect ')' after if condition.")?;
+
+        let then_branch: Stmt = self.statement()?;
+
+        let else_branch: Option<Stmt> = if self.match_token(&[TokenType::Else]) {
+            Some(self.statement()?)
+        } else {
+            None
+        };
+
+        Ok(stmt::Stmt::If(stmt::If::new(condition, then_branch, else_branch)))
+    }
+
     fn print_statement(&mut self) -> Result<Stmt, LoxError> {
         let value: Expr = self.expression()?;
         self.consume(&TokenType::Semicolon, "Expect ';' after value.")?;
@@ -235,6 +273,61 @@ impl<'a> Parser<'a> {
         self.consume(&TokenType::Semicolon, "Expect ';' after variable declaration.")?;
 
         Ok(stmt::Stmt::Var(stmt::Var::new(name, initializer)))
+    }
+
+    fn while_statement(&mut self) -> Result<Stmt, LoxError> {
+        self.consume(&TokenType::LeftParen, "Expect '(' after 'while'.")?;
+        let condition: Expr = self.expression()?;
+        self.consume(&TokenType::RightParen, "Expect ')' after condition.")?;
+        let body: Stmt = self.statement()?;
+
+        Ok(stmt::Stmt::While(stmt::While::new(condition, body)))
+    }
+
+    fn for_statement(&mut self) -> Result<Stmt, LoxError> {
+        // The opening parenthesis before the clauses.
+        self.consume(&TokenType::LeftParen, "Expect '(' after 'for'.")?;
+
+        // The initialiser clause.
+        let initializer: Option<Stmt>;
+        if self.match_token(&[TokenType::Semicolon]) {
+            initializer = None;
+        } else if self.match_token(&[TokenType::Var]) {
+            initializer = Some(self.var_declaration()?);
+        } else {
+            initializer = Some(self.expression_statement()?);
+        };
+
+        // Loop condition clause.
+        let condition: Option<Expr> = if !self.check(&TokenType::Semicolon) {
+            Some(self.expression()?) } else { None };
+        self.consume(&TokenType::Semicolon, "Expect ';' after loop condition.")?;
+
+        // Increment clause.    
+        let increment: Option<Expr> = if !self.check(&TokenType::RightParen) {
+            Some(self.expression()?) } else { None };
+        self.consume(&TokenType::RightParen, "Expect ')' after for clauses.")?;
+
+        let mut body = self.statement()?;
+
+        if let Some(inc) = increment {
+            let new_body: Vec<Stmt> = vec![
+                body,
+                stmt::Stmt::Expression(stmt::Expression::new(inc))
+            ];
+            body = stmt::Stmt::Block(stmt::Block::new(new_body));
+        };
+
+        body = stmt::Stmt::While(stmt::While::new(
+            condition.unwrap_or(Expr::Literal(Literal::new(LiteralValue::Boolean(true)))), 
+            body)
+        );
+
+        if let Some(ini) = initializer {
+            body = stmt::Stmt::Block(stmt::Block::new(vec![ini, body]));
+        };
+
+        Ok(body)
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, LoxError> {
@@ -265,7 +358,8 @@ impl<'a> Parser<'a> {
     }
 
     fn assignment(&mut self) -> Result<Expr, LoxError> {
-        let expr: Expr = self.equality()?;
+        // let expr: Expr = self.equality()?;
+        let expr: Expr = self.or()?;
 
         if self.match_token(&[TokenType::Equal]) {
             let equals: Token = self.previous().clone();
@@ -285,8 +379,14 @@ impl<'a> Parser<'a> {
     }
 
     fn statement(&mut self) -> Result<Stmt, LoxError> {
-        if self.match_token(&[TokenType::Print]) {
+        if self.match_token(&[TokenType::For]) {
+            self.for_statement()
+        } else if self.match_token(&[TokenType::If]) {
+            self.if_statement()
+        } else if self.match_token(&[TokenType::Print]) {
             self.print_statement()
+        } else if self.match_token(&[TokenType::While]) {
+            self.while_statement()
         } else if self.match_token(&[TokenType::LeftBrace]) {
             Ok(stmt::Stmt::Block(stmt::Block::new(self.block()?)))
         } else {
