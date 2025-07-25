@@ -215,8 +215,14 @@ impl<W: Write> expr::Visitor<Value> for Interpreter<W> {
         }
     }
 
-    fn visit_logical_expr(&mut self, _: &Logical) -> Result<Value, LoxError> {
-        unimplemented!()
+    fn visit_logical_expr(&mut self, expr: &Logical) -> Result<Value, LoxError> {
+        let left = self.evaluate(&expr.get_left())?;
+
+        match expr.get_operator().get_type() {
+            TokenType::Or if self.is_truthy(&left) => Ok(left),
+            TokenType::And if !self.is_truthy(&left) => Ok(left),
+            _ => self.evaluate(&expr.get_right()),
+        }
     }
 
     fn visit_set_expr(&mut self, _: &Set) -> Result<Value, LoxError> {
@@ -274,8 +280,15 @@ impl<W: Write> stmt::Visitor<()> for Interpreter<W> {
         unimplemented!()
     }
 
-    fn visit_if_stmt(&mut self, _: &If) -> Result<(), LoxError> {
-        unimplemented!()
+    fn visit_if_stmt(&mut self, stmt: &If) -> Result<(), LoxError> {
+        let value: Value = self.evaluate(stmt.get_condition())?;
+        if self.is_truthy(&value) {
+            Ok(self.execute(stmt.get_then_branch())?)
+        } else if let Some(else_branch) = stmt.get_else_branch() {
+            Ok(self.execute(else_branch)?)
+        } else {
+            Ok(())
+        }
     }
 
     fn visit_print_stmt(&mut self, stmt: &Print) -> Result<(), LoxError> {
@@ -305,7 +318,12 @@ impl<W: Write> stmt::Visitor<()> for Interpreter<W> {
         Ok(())
     }
 
-    fn visit_while_stmt(&mut self, _: &While) -> Result<(), LoxError> {
-        unimplemented!()
+    fn visit_while_stmt(&mut self, stmt: &While) -> Result<(), LoxError> {
+        let mut value: Value = self.evaluate(stmt.get_condition())?;
+        while self.is_truthy(&value) {
+            self.execute(stmt.get_body())?;
+            value = self.evaluate(stmt.get_condition())?;
+        }
+        Ok(())
     }
 }
