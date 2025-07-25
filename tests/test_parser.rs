@@ -15,6 +15,9 @@
 //!     * cargo test test_parser_generic_stmt -- --exact [--nocapture] 
 //!     * cargo test test_parser_var_stmt -- --exact [--nocapture]
 //!     * cargo test test_parser_assign_stmt -- --exact [--nocapture]
+//!     * cargo test test_parser_conditional_execution_stmt -- --exact [--nocapture]
+//!     * cargo test test_parser_while_loops_stmt -- --exact [--nocapture]
+//!     * cargo test test_parser_for_loops_stmt -- --exact [--nocapture]
 //! 
 
 mod test_common;
@@ -112,6 +115,61 @@ fn get_assign_script_results<'a>() -> TestScriptAndResults<'a> {
         },
     ]
 } // cargo test test_parser_assign_stmt -- --exact [--nocapture] 
+
+// Section https://craftinginterpreters.com/control-flow.html#conditional-execution
+fn get_conditional_execution_script_results<'a>() -> TestScriptAndResults<'a> {
+    vec![
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/if
+        TestScriptAndResult {
+            script_name: "./tests/data/if/var_in_else.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'var': Expect expression."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/if/var_in_then.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'var': Expect expression."],
+        },
+    ]
+} // cargo test test_parser_conditional_execution_stmt -- --exact [--nocapture]
+
+fn get_while_loops_script_results<'a>() -> TestScriptAndResults<'a> {
+    vec![
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/while
+        TestScriptAndResult {
+            script_name: "./tests/data/while/var_in_body.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'var': Expect expression."],
+        },
+    ]
+} // cargo test test_parser_while_loops_stmt -- --exact [--nocapture]
+
+fn get_for_loops_script_results<'a>() -> TestScriptAndResults<'a> {
+    vec![
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/for
+        TestScriptAndResult {
+            script_name: "./tests/data/for/statement_condition.lox",
+            expected_result: false,
+            expected_output: vec!["[line 3] Error at '{': Expect expression."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/for/statement_increment.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at '{': Expect expression."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/for/statement_initializer.lox",
+            expected_result: false,
+            expected_output: vec!["[line 3] Error at '{': Expect expression."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/for/var_in_body.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'var': Expect expression."],
+        },
+    ]
+} // cargo test test_parser_for_loops_stmt -- --exact [--nocapture]
+
 
 #[test]
 // The test script is from 
@@ -226,6 +284,54 @@ fn test_parser_assign_stmt() {
     let var_script_results = get_assign_script_results();
 
     for entry in var_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
+}
+
+#[test]
+fn test_parser_conditional_execution_stmt() {
+    let cond_exec_script_results = get_conditional_execution_script_results();
+
+    for entry in cond_exec_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
+}
+
+#[test]
+fn test_parser_while_loops_stmt() {
+    let while_loops_script_results = get_while_loops_script_results();
+
+    for entry in while_loops_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
+}
+
+#[test]
+fn test_parser_for_loops_stmt() {
+    let for_loops_script_results = get_for_loops_script_results();
+
+    for entry in for_loops_script_results {
         // Ensure script is loaded, scanned and parsed successfully.
         let tokens = assert_scan_script(entry.script_name);
 
