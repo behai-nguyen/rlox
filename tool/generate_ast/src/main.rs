@@ -101,14 +101,14 @@ impl GenerateAst {
                 ("If", "then_branch"),
                 FieldOverride {
                     param_type: "Stmt",
-                    assignment: "Some(Box::new(then_branch))",
+                    assignment: "Box::new(then_branch)",
                 }
             ),
             (
                 ("If", "else_branch"),
                 FieldOverride {
-                    param_type: "Stmt",
-                    assignment: "Some(Box::new(else_branch))",
+                    param_type: "Option<Stmt>",
+                    assignment: "else_branch.map(Box::new)",
                 }
             ),
             (
@@ -364,7 +364,7 @@ fn main() {
                     "Expression : Expr expression",
                     "Function   : Token name, Vec<Token> params, \
                                   Vec<Stmt> body",
-                    "If         : Expr condition, Option<Box<Stmt>> then_branch, \
+                    "If         : Expr condition, Box<Stmt> then_branch, \
                                   Option<Box<Stmt>> else_branch",
                     "Print      : Expr expression",
                     "Return     : Token keyword, Option<Expr> value",
