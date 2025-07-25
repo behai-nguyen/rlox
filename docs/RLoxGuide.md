@@ -20,6 +20,21 @@ For a complete documentation, please see the author original [The Lox Language](
     - [Example 3](#example-3)
     - [Example 4](#example-4)
     - [Example 5](#example-5)
+* [Control Flow](#control-flow)
+    - [Conditional Execution: if & else](#conditional-execution-if--else)
+        * [Example 1](#example-1-1)
+        * [Example 2](#example-2-1)
+    - [Logical Operators: and & or](#logical-operators-and--or)
+        * [Example 1](#example-1-2)
+        * [Example 2](#example-2-2)
+        * [Example 3](#example-3-1)
+    - [While Loops: while](#while-loops-while)
+        * [Example 1](#example-1-3)
+        * [Example 2](#example-2-3)
+    - [For Loops: for](#for-loops-for)
+        * [Example 1](#example-1-4)
+        * [Example 2](#example-2-4)
+        * [Example 3](#example-3-2)
 
 ## Data Types
 
@@ -208,6 +223,182 @@ var c = "global c";
 print a;
 print b;
 print c;
+```
+
+## Control Flow
+
+### Conditional Execution: `if` & `else`
+
+Taken from this [author test script area](https://github.com/munificent/craftinginterpreters/tree/master/test/if).
+
+#### Example 1
+
+```lox
+// Executes the 'then' branch when the condition is truthy.
+if (true) print "good"; // expect: good
+if (false) print "bad";
+
+// Allow block body.
+if (true) { print "block"; } // expect: block
+
+// Assignment within the condition expression.
+var a = false;
+if (a = true) print a; // expect: true
+```
+
+#### Example 2
+
+```lox
+// Evaluate the 'else' expression if the condition is false.
+if (true) print "good"; else print "bad"; // expect: good
+if (false) print "bad"; else print "good"; // expect: good
+
+// Allow block body.
+if (false) nil; else { print "block"; } // expect: block
+```
+
+### Logical Operators: `and` & `or`
+
+#### Example 1
+
+Logical operators support short-circuit evaluation and return the last evaluated operand.
+
+```lox
+print true and false; // expect: false
+print false or true; // expect: true
+print "text" or nil; // expect: text
+print true or false and nil; // expect: true
+```
+
+Taken from this [author test script area](https://github.com/munificent/craftinginterpreters/tree/master/test/logical_operator).
+
+#### Example 2
+
+```lox
+// Note: These examples assume that integers are treated as truthy values.
+
+// Return the first non-true argument.
+print false and 1; // expect: false
+print true and 1; // expect: 1
+print 1 and 2 and false; // expect: false
+
+// Return the last argument if all are true.
+print 1 and true; // expect: true
+print 1 and 2 and 3; // expect: 3
+
+// Short-circuit at the first false argument.
+var a = "before";
+var b = "before";
+(a = true) and
+    (b = false) and
+    (a = "bad");
+print a; // expect: true
+print b; // expect: false
+```
+
+#### Example 3
+
+```lox
+// Note: These tests implicitly depend on ints being truthy.
+
+// Return the first true argument.
+print 1 or true; // expect: 1
+print false or 1; // expect: 1
+print false or false or true; // expect: true
+
+// Return the last argument if all are false.
+print false or false; // expect: false
+print false or false or false; // expect: false
+
+// Short-circuit at the first true argument.
+var a = "before";
+var b = "before";
+(a = false) or
+    (b = true) or
+    (a = "bad");
+print a; // expect: false
+print b; // expect: true
+```
+
+### While Loops: `while`
+
+#### Example 1
+
+```lox
+var i = 1;
+while (i <= 5) {
+    print i;
+    i = i + 1;
+}
+```
+
+#### Example 2
+
+Adapted from the [official test script](https://github.com/munificent/craftinginterpreters/tree/master/test/while/syntax.lox):
+
+```lox
+// Single-expression body.
+var c = 0;
+while (c < 3) print c = c + 1;
+
+print "----";
+
+// Block body.
+var a = 0;
+while (a < 3) {
+    print a;
+    a = a + 1;
+}
+
+print "----";
+
+// Statement bodies.
+while (false) if (true) 1; else 2;
+while (false) while (true) 1;
+```
+
+### For Loops: `for`
+
+#### Example 1
+
+From the end of the [For Loops](https://craftinginterpreters.com/control-flow.html#for-loops) section: prints the first 21 Fibonacci numbers.
+
+```lox
+var a = 0;
+var temp;
+
+for (var b = 1; a < 10000; b = temp + b) {
+    print a;
+    temp = a;
+    a = b;
+}
+```
+
+#### Example 2
+
+```lox
+for (var i = 0; i < 3; i = i + 1) {
+    for (var j = 0; j < 2; j = j + 1) {
+        print i * j;
+    }
+}
+```
+
+#### Example 3
+
+```lox
+for (var i = 1; i <= 10; i = i + 1) {
+    print i;
+	
+	if ((i/2) > 2.5) print "more than halfway through";
+	
+	if ((i/2) > 2.5) {
+        print "also more than halfway through";	
+    }
+	
+	var b = (i/2) > 2.5;
+	print b;
+}
 ```
 
 > This guide will expand as more of the Lox language is implemented—including statements, functions, and classes.
