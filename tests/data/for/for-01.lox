@@ -1,0 +1,15 @@
+// My test script.
+
+for (var i = 0; i < 3; i = i + 1) {
+  for (var j = 0; j < 2; j = j + 1) {
+    print i * j;
+  }
+}
+
+// Expect: -- Normalises f64:
+// 0.0
+// 0.0
+// 0.0
+// 1.0
+// 0.0
+// 2.0

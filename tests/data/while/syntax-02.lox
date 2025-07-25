@@ -1,0 +1,26 @@
+// Copied from author's https://github.com/munificent/craftinginterpreters/tree/master/test/while/syntax.lox
+// -- removed last line.
+
+// Single-expression body.
+var c = 0;
+while (c < 3) print c = c + 1;
+// Normalises f64.
+// expect: 1.0
+// expect: 2.0
+// expect: 3.0
+
+// Block body.
+var a = 0;
+while (a < 3) {
+  print a;
+  a = a + 1;
+}
+// Normalises f64.
+// expect: 0.0
+// expect: 1.0
+// expect: 2.0
+
+// Statement bodies.
+while (false) if (true) 1; else 2;
+while (false) while (true) 1;
+

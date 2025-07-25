@@ -1,0 +1,38 @@
+// From https://craftinginterpreters.com/control-flow.html#for-loops
+// End of section.
+// Print the first 21 elements in the Fibonacci sequence.
+//
+
+var a = 0;
+var temp;
+
+for (var b = 1; a < 10000; b = temp + b) {
+  print a;
+  temp = a;
+  a = b;
+}
+
+// Expect:
+//
+// 0.0
+// 1.0
+// 1.0
+// 2.0
+// 3.0
+// 5.0
+// 8.0
+// 13.0 
+// 21.0
+// 34.0
+// 55.0
+// 89.0
+// 144.0 
+// 233.0
+// 377.0
+// 610.0
+// 987.0
+// 1597.0 
+// 2584.0
+// 4181.0
+// 6765.0
+//

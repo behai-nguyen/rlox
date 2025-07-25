@@ -1,0 +1,14 @@
+// My test script.
+
+var i = 1;
+while (i <= 5) {
+  print i;
+  i = i + 1;
+}
+
+// Expect: -- Normalises f64:
+// 1.0
+// 2.0
+// 3.0
+// 4.0
+// 5.0

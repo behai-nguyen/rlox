@@ -1,0 +1,7 @@
+// Test for https://craftinginterpreters.com/control-flow.html#logical-operators
+// Some edge cases.
+
+print true and false; // expect: false
+print false or true; // expect: true
+print "text" or nil; // expect: text
+print true or false and nil; // expect: true

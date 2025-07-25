@@ -1,0 +1,4 @@
+// From https://craftinginterpreters.com/control-flow.html#logical-operators
+// end of section.
+print "hi" or 2; // "hi".
+print nil or "yes"; // "yes".
