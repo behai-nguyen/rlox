@@ -113,19 +113,19 @@ impl Function {
 #[derive(Debug, Clone, PartialEq)]
 pub struct If {
     condition: Expr,
-    then_branch: Option<Box<Stmt>>,
+    then_branch: Box<Stmt>,
     else_branch: Option<Box<Stmt>>,
 }
 
 impl If {
     pub fn new(condition: Expr, 
         then_branch: Stmt, 
-        else_branch: Stmt
+        else_branch: Option<Stmt>
     ) -> Self {
         If {
             condition,
-            then_branch: Some(Box::new(then_branch)),
-            else_branch: Some(Box::new(else_branch)),
+            then_branch: Box::new(then_branch),
+            else_branch: else_branch.map(Box::new),
         }
     }
 
@@ -133,7 +133,7 @@ impl If {
         &self.condition
     }
 
-    pub fn get_then_branch(&self) -> &Option<Box<Stmt>> {
+    pub fn get_then_branch(&self) -> &Box<Stmt> {
         &self.then_branch
     }
 
