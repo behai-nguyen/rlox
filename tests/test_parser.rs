@@ -18,6 +18,7 @@
 //!     * cargo test test_parser_conditional_execution_stmt -- --exact [--nocapture]
 //!     * cargo test test_parser_while_loops_stmt -- --exact [--nocapture]
 //!     * cargo test test_parser_for_loops_stmt -- --exact [--nocapture]
+//!     * cargo test test_parser_function_objects_stmt -- --exact [--nocapture]
 //! 
 
 mod test_common;
@@ -170,6 +171,74 @@ fn get_for_loops_script_results<'a>() -> TestScriptAndResults<'a> {
     ]
 } // cargo test test_parser_for_loops_stmt -- --exact [--nocapture]
 
+fn get_function_objects_script_results<'a>() -> TestScriptAndResults<'a> {
+    vec![
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/for
+        TestScriptAndResult {
+            script_name: "./tests/data/for/fun_in_body.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'fun': Expect expression."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/for/class_in_body.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'class': Expect expression."],
+        },
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/function
+        TestScriptAndResult {
+            script_name: "./tests/data/function/body_must_be_block.lox",
+            expected_result: false,
+            expected_output: vec!["[line 3] Error at '123': Expect '{' before function body."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/function/missing_comma_in_parameters.lox",
+            expected_result: false,
+            expected_output: vec!["[line 3] Error at 'c': Expect ')' after parameters."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/function/too_many_arguments.lox",
+            expected_result: false,
+            expected_output: vec!["[line 260] Error at 'a': Can't have more than 255 arguments."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/function/too_many_parameters.lox",
+            expected_result: false,
+            expected_output: vec!["[line 257] Error at 'a': Can't have more than 255 parameters."],
+        },
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/if
+        TestScriptAndResult {
+            script_name: "./tests/data/if/fun_in_else.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'fun': Expect expression."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/if/fun_in_then.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'fun': Expect expression."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/if/class_in_else.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'class': Expect expression."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/if/class_in_then.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'class': Expect expression."],
+        },
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/while
+        TestScriptAndResult {
+            script_name: "./tests/data/while/fun_in_body.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'fun': Expect expression."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/while/class_in_body.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at 'class': Expect expression."],
+        },        
+    ]
+} // cargo test test_parser_function_objects_stmt -- --exact [--nocapture]
 
 #[test]
 // The test script is from 
@@ -332,6 +401,22 @@ fn test_parser_for_loops_stmt() {
     let for_loops_script_results = get_for_loops_script_results();
 
     for entry in for_loops_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
+}
+
+#[test]
+fn test_parser_function_objects_stmt() {
+    let func_objs_script_results = get_function_objects_script_results();
+
+    for entry in func_objs_script_results {
         // Ensure script is loaded, scanned and parsed successfully.
         let tokens = assert_scan_script(entry.script_name);
 
