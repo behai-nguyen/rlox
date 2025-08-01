@@ -174,7 +174,7 @@ impl GenerateAst {
             let (type_name, _) = t.split_at(last_colon);
             let trimmed_type = type_name.trim();
 
-            file.write_all(format!("    fn visit_{0}_{1}(&mut self, {1}: &{2}) -> Result<T, LoxError>;\n",
+            file.write_all(format!("    fn visit_{0}_{1}(&mut self, {1}: &{2}) -> Result<T, LoxRuntimeError>;\n",
                 trimmed_type.to_lowercase(), base_name.to_lowercase(), trimmed_type).as_bytes()
             )?;
         }
@@ -183,13 +183,13 @@ impl GenerateAst {
         file.write_all(format!("// Implement `accept()`, `accept_ref()` for `{}`\n", base_name).as_bytes())?;
         file.write_all(format!("impl {} {{\n", base_name).as_bytes())?;
 
-        file.write_all("    pub fn accept<T>(&mut self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxError> {\n".as_bytes())?;
+        file.write_all("    pub fn accept<T>(&mut self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {\n".as_bytes())?;
         file.write_all("        match self {\n".as_bytes())?;
         Self::accept_pattern_matching_dispatch(file, base_name, types)?;
         file.write_all("        }\n".as_bytes())?; // match self closing
         file.write_all("    }\n\n".as_bytes())?; // pub fn accept() closing.
 
-        file.write_all("    pub fn accept_ref<T>(&self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxError> {\n".as_bytes())?;
+        file.write_all("    pub fn accept_ref<T>(&self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {\n".as_bytes())?;
         file.write_all("        match self {\n".as_bytes())?;
         Self::accept_pattern_matching_dispatch(file, base_name, types)?;
         file.write_all("        }\n".as_bytes())?; // match self closing
@@ -338,7 +338,7 @@ fn main() {
     }
 
     let _ = GenerateAst::define_ast(vec!["use super::token::{LiteralValue, Token};\n", 
-	            "use super::lox_error::LoxError;\n\n"], 
+	            "use super::lox_runtime_error::LoxRuntimeError;\n\n"], 
                 "Expr", &args[1], vec![
 				    "Assign   : Token name, Box<Expr> value",
                     "Binary   : Box<Expr> left, Token operator, Box<Expr> right",
@@ -356,7 +356,7 @@ fn main() {
 
     let _ = GenerateAst::define_ast(vec!["use super::token::Token;\n",
                 "use super::expr::Expr;\n",
-				"use super::lox_error::LoxError;\n\n"], 
+				"use super::lox_runtime_error::LoxRuntimeError;\n\n"], 
                 "Stmt", &args[1], vec![
                     "Block      : Vec<Stmt> statements",
                     "Class      : Token name, Option<Expr> superclass, \
