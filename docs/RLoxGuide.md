@@ -35,6 +35,9 @@ For a complete documentation, please see the author original [The Lox Language](
         * [Example 1](#example-1-4)
         * [Example 2](#example-2-4)
         * [Example 3](#example-3-2)
+* [Functions](#functions)
+    - [Example 1](#example-1-5)
+    - [Example 2](#example-2-5)
 
 ## Data Types
 
@@ -399,6 +402,45 @@ for (var i = 1; i <= 10; i = i + 1) {
 	var b = (i/2) > 2.5;
 	print b;
 }
+```
+## Functions
+
+### Example 1
+
+This Lox script appears at the beginning of the [Local Functions and Closures](https://craftinginterpreters.com/functions.html#local-functions-and-closures) section.
+
+```lox
+fun makeCounter() {
+  var i = 0;
+  fun count() {
+    i = i + 1;
+    print i;
+  }
+
+  return count;
+}
+
+var counter = makeCounter();
+counter(); // "1.0".
+counter(); // "2.0".
+```
+
+### Example 2
+
+This example demonstrates the usage of the native function `clock()`. 
+
+This example demonstrates the use of the native `clock()` function.  
+It comes from one of the author's [benchmark scripts](https://github.com/munificent/craftinginterpreters/tree/master/test/benchmark/fib.lox).
+
+```lox
+fun fib(n) {
+  if (n < 2) return n;
+  return fib(n - 2) + fib(n - 1);
+}
+
+var start = clock();
+print fib(22) == 17711;
+print clock() - start;
 ```
 
 > This guide will expand as more of the Lox language is implemented—including statements, functions, and classes.
