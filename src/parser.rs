@@ -116,9 +116,41 @@ impl<'a> Parser<'a> {
             let right = self.unary()?;
             Ok(Expr::Unary(Unary::new(operator, right)))
         } else {
-            self.primary()
+            // self.primary()
+            self.call()
         }
-    }    
+    }
+
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, LoxError> {
+        let mut arguments: Vec<Expr> = vec![];
+
+        if !self.check(&TokenType::RightParen) {
+            loop {
+                if arguments.len() >= 255 {
+                    return Err(error(self.peek(), "Can't have more than 255 arguments."));
+                }
+                arguments.push(self.expression()?);
+
+                if !self.match_token(&[TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+
+        let paren: Token = self.consume(&TokenType::RightParen, "Expect ')' after arguments.")?.clone();
+
+        Ok(Expr::Call(Call::new(callee, paren, arguments)))
+    }
+
+    fn call(&mut self) -> Result<Expr, LoxError> {
+        let mut expr: Expr = self.primary()?;
+
+        while self.match_token(&[TokenType::LeftParen]) {
+            expr = self.finish_call(expr)?;
+        }
+
+        Ok(expr)
+    }
 
     fn factor(&mut self) -> Result<Expr, LoxError> {
         let mut expr= self.unary()?;
@@ -199,8 +231,17 @@ impl<'a> Parser<'a> {
         self.assignment()
     }
 
+    /*
     fn declaration(&mut self) -> Result<Stmt, LoxError> {
-        if self.match_token(&[TokenType::Var]) {
+        if self.match_token(&[TokenType::Fun]) {
+            match self.function("function") {
+                Ok(val) => return Ok(val),
+                Err(err) => {
+                    self.synchronize();
+                    Err(err)
+                }
+            }
+        } else if self.match_token(&[TokenType::Var]) {
             match self.var_declaration() {
                 Ok(val) => return Ok(val),
                 Err(err) => {
@@ -218,6 +259,24 @@ impl<'a> Parser<'a> {
             }
         }
     }
+    */
+    fn declaration(&mut self) -> Result<Stmt, LoxError> {
+        let result = if self.match_token(&[TokenType::Fun]) {
+            self.function("function")
+        } else if self.match_token(&[TokenType::Var]) {
+            self.var_declaration()
+        } else {
+            self.statement()
+        };
+
+        match result {
+            Ok(stmt) => Ok(stmt),
+            Err(err) => {
+                self.synchronize();
+                Err(err)
+            }
+        }
+    }    
     
     fn synchronize(&mut self) {
         self.advance();
@@ -259,6 +318,17 @@ impl<'a> Parser<'a> {
         self.consume(&TokenType::Semicolon, "Expect ';' after value.")?;
 
         Ok(stmt::Stmt::Print(stmt::Print::new(value)))
+    }
+
+    fn return_statement(&mut self) -> Result<Stmt, LoxError> {
+        let keyword: Token = self.previous().clone();
+
+        let value = if !self.check(&TokenType::Semicolon) {
+            Some(self.expression()?) 
+        } else { None };
+
+        self.consume(&TokenType::Semicolon, "Expect ';' after return value.")?;
+        Ok(stmt::Stmt::Return(stmt::Return::new(keyword, value)))
     }
 
     fn var_declaration(&mut self) -> Result<Stmt, LoxError> {
@@ -337,6 +407,35 @@ impl<'a> Parser<'a> {
         Ok(stmt::Stmt::Expression(stmt::Expression::new(expr)))
     }
 
+    fn function(&mut self, kind: &str) -> Result<Stmt, LoxError> {
+        let name: Token = self.consume(&TokenType::Identifier, &format!("Expect {} name.", kind))?.clone();
+
+        // Parse the parameter list and the pair of parentheses wrapped around it.
+        self.consume(&TokenType::LeftParen, &format!("Expect '(' after {} name.", kind))?;
+        let mut parameters: Vec<Token> = vec![];
+        if !self.check(&TokenType::RightParen) {
+            loop {
+                if parameters.len() >= 255 {
+                    return Err(error(self.peek(), "Can't have more than 255 parameters."));
+                }
+                
+                parameters.push(
+                    self.consume(&TokenType::Identifier, "Expect parameter name.")?.clone()
+                );
+
+                if !self.match_token(&[TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+        self.consume(&TokenType::RightParen, "Expect ')' after parameters.")?;
+
+        // Parse the body and wrap it all up in a function node.
+        self.consume(&TokenType::LeftBrace, &format!("Expect '{{' before {} body.", kind))?;
+        let body: Vec<Stmt> = self.block()?;
+        Ok(Stmt::Function(Function::new(name, parameters, body)))
+    }
+
     // The author's note:
     //     Having block() return the raw list of statements and leaving it to 
     //     statement() to wrap the list in a Stmt.Block looks a little odd. I did 
@@ -385,6 +484,8 @@ impl<'a> Parser<'a> {
             self.if_statement()
         } else if self.match_token(&[TokenType::Print]) {
             self.print_statement()
+        } else if self.match_token(&[TokenType::Return]) {
+            self.return_statement()
         } else if self.match_token(&[TokenType::While]) {
             self.while_statement()
         } else if self.match_token(&[TokenType::LeftBrace]) {
