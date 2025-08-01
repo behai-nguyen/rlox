@@ -29,6 +29,7 @@ type ValuesMap = HashMap<String, Value>;
 
 pub type EnvironmentRef = Rc<RefCell<Environment>>;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
     values: ValuesMap,
     enclosing: Option<EnvironmentRef>,
