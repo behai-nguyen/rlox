@@ -103,6 +103,16 @@ git clone -b v0.4.0 https://github.com/behai-nguyen/rlox.git
 
 This is Chapter 8: <a href="https://craftinginterpreters.com/control-flow.html" title="Control Flow" target="_blank">Control Flow</a>. The following additional statements and expressions have been implemented: <code>Stmt::If</code>, <code>Expr::Logical</code>, and <code>Stmt::While</code>. Lox now supports <code>if</code>, <code>else</code>, <code>and</code>, <code>or</code>, <code>while</code>, and <code>for</code>. Despite this long list of new features, the implementation remains fairly straightforward.
 
+7. [rlox: A Rust Implementation of “Crafting Interpreters” – Functions](https://behainguyen.wordpress.com/2025/08/01/rlox-a-rust-implementation-of-crafting-interpreters-functions/)
+
+The code version for the above post has been tagged with **v0.5.0**. It can be cloned with:
+  
+```
+git clone -b v0.5.0 https://github.com/behai-nguyen/rlox.git
+```
+
+This post covers Chapter 10 of <a href="https://craftinginterpreters.com/functions.html" title="Functions" target="_blank">Crafting Interpreters</a>: <strong>Functions</strong>. The following new syntax elements have been implemented: <code>Expr::Call</code>, <code>Stmt::Function</code>, and <code>Stmt::Return</code>. Lox now supports <code>fun</code>, <code>return</code>, and <code>closures</code>. This post discusses several implementation details that deserve attention.
+
 ## License
 [MIT license](http://www.opensource.org/licenses/mit-license.php)
 and the [Creative Commons](  https://creativecommons.org/licenses/by-nc-nd/4.0/).
