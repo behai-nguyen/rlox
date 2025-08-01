@@ -1,6 +1,6 @@
 //> Appendix II expr
 use super::token::{LiteralValue, Token};
-use super::lox_error::LoxError;
+use super::lox_runtime_error::LoxRuntimeError;
 
 //> expr-assign
 #[derive(Debug, Clone, PartialEq)]
@@ -341,23 +341,23 @@ pub enum Expr {
 
 // Visitor Trait
 pub trait Visitor<T> {
-    fn visit_assign_expr(&mut self, expr: &Assign) -> Result<T, LoxError>;
-    fn visit_binary_expr(&mut self, expr: &Binary) -> Result<T, LoxError>;
-    fn visit_call_expr(&mut self, expr: &Call) -> Result<T, LoxError>;
-    fn visit_get_expr(&mut self, expr: &Get) -> Result<T, LoxError>;
-    fn visit_grouping_expr(&mut self, expr: &Grouping) -> Result<T, LoxError>;
-    fn visit_literal_expr(&mut self, expr: &Literal) -> Result<T, LoxError>;
-    fn visit_logical_expr(&mut self, expr: &Logical) -> Result<T, LoxError>;
-    fn visit_set_expr(&mut self, expr: &Set) -> Result<T, LoxError>;
-    fn visit_super_expr(&mut self, expr: &Super) -> Result<T, LoxError>;
-    fn visit_this_expr(&mut self, expr: &This) -> Result<T, LoxError>;
-    fn visit_unary_expr(&mut self, expr: &Unary) -> Result<T, LoxError>;
-    fn visit_variable_expr(&mut self, expr: &Variable) -> Result<T, LoxError>;
+    fn visit_assign_expr(&mut self, expr: &Assign) -> Result<T, LoxRuntimeError>;
+    fn visit_binary_expr(&mut self, expr: &Binary) -> Result<T, LoxRuntimeError>;
+    fn visit_call_expr(&mut self, expr: &Call) -> Result<T, LoxRuntimeError>;
+    fn visit_get_expr(&mut self, expr: &Get) -> Result<T, LoxRuntimeError>;
+    fn visit_grouping_expr(&mut self, expr: &Grouping) -> Result<T, LoxRuntimeError>;
+    fn visit_literal_expr(&mut self, expr: &Literal) -> Result<T, LoxRuntimeError>;
+    fn visit_logical_expr(&mut self, expr: &Logical) -> Result<T, LoxRuntimeError>;
+    fn visit_set_expr(&mut self, expr: &Set) -> Result<T, LoxRuntimeError>;
+    fn visit_super_expr(&mut self, expr: &Super) -> Result<T, LoxRuntimeError>;
+    fn visit_this_expr(&mut self, expr: &This) -> Result<T, LoxRuntimeError>;
+    fn visit_unary_expr(&mut self, expr: &Unary) -> Result<T, LoxRuntimeError>;
+    fn visit_variable_expr(&mut self, expr: &Variable) -> Result<T, LoxRuntimeError>;
 }
 
 // Implement `accept()`, `accept_ref()` for `Expr`
 impl Expr {
-    pub fn accept<T>(&mut self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxError> {
+    pub fn accept<T>(&mut self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {
         match self {
             Expr::Assign(val) => visitor.visit_assign_expr(val),
             Expr::Binary(val) => visitor.visit_binary_expr(val),
@@ -374,7 +374,7 @@ impl Expr {
         }
     }
 
-    pub fn accept_ref<T>(&self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxError> {
+    pub fn accept_ref<T>(&self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {
         match self {
             Expr::Assign(val) => visitor.visit_assign_expr(val),
             Expr::Binary(val) => visitor.visit_binary_expr(val),
