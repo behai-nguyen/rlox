@@ -17,11 +17,9 @@
 //!     * cargo test test_interpreter_block_stmt -- --exact [--nocapture]
 //! 
 
-use std::io::Cursor;
-
 mod test_common;
 use crate::test_common::{
-    make_interpreter,
+    make_interpreter_byte_stream,
     assert_parse_script_statements,
     TestScriptAndResult,
     TestScriptAndResults,
@@ -270,7 +268,7 @@ fn test_interpreter_print_stmt() {
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter(Cursor::new(Vec::new()));
+        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -286,7 +284,7 @@ fn test_interpreter_var_stmt() {
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter(Cursor::new(Vec::new()));
+        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -302,7 +300,7 @@ fn test_interpreter_assign_stmt() {
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter(Cursor::new(Vec::new()));
+        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -318,7 +316,7 @@ fn test_interpreter_block_stmt() {
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter(Cursor::new(Vec::new()));
+        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
