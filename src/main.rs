@@ -14,11 +14,16 @@ mod scanner_index;
 mod token_type;
 mod token;
 mod data_type;
+mod lox_callable;
+mod lox_clock;
 mod scanner;
 mod ast_printer;
 mod parser;
 mod environment;
 mod interpreter;
+mod lox_function;
+mod lox_return;
+mod lox_runtime_error;
 
 mod expr;
 mod stmt;
@@ -34,6 +39,8 @@ fn run(source: &str) -> Result<(), std::io::Error> {
             match parser.parse() {
                 Err(err) => println!("Parsing error: {}", err),
                 Ok(statements) => { 
+                    // Both are valid.
+                    // let mut interpreter = Interpreter::new(Box::new(io::stdout()));
                     let mut interpreter = Interpreter::new(io::stdout());
                     match interpreter.interpret(statements) {
                         Err(err) => println!("Evaluation error: {}", err),
