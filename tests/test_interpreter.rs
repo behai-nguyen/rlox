@@ -32,8 +32,6 @@
 //!     * cargo test test_interpreter_expr -- --exact [--nocapture]
 //! 
 
-use std::io::Cursor;
-
 mod test_common;
 
 use crate::test_common::{
@@ -41,10 +39,12 @@ use crate::test_common::{
     assert_parse_line_expression,
     TestScriptAndResults,
     TestScriptAndResult,
-    make_interpreter,
+    make_interpreter_stdout,
+    make_interpreter_byte_stream,
     assert_parse_script_statements,
     assert_interpreter_result,
 };
+
 
 #[test]
 // The test script is from 
@@ -54,7 +54,7 @@ fn test_interpreter_01() {
     let expr = assert_parse_script_expression("./tests/data/expressions/evaluate.lox");
 
     // Test interpreting/evaluating.
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
     let res = interpreter.interpret_single_expression(&expr);
 
     // Interpreting/evaluating was successful.
@@ -67,7 +67,7 @@ fn test_interpreter_01() {
 
 #[test]
 fn test_interpreter_02_binary_greater() {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.    
     let expr = assert_parse_line_expression("((4.5 / 2) * 2) > 3.5");
@@ -97,7 +97,7 @@ fn test_interpreter_02_binary_greater() {
 
 #[test]
 fn test_interpreter_03_binary_greater_equal() {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.    
     let expr = assert_parse_line_expression("((4.5 / 2) * 2) >= 4.25");
@@ -127,7 +127,7 @@ fn test_interpreter_03_binary_greater_equal() {
 
 #[test]
 fn test_interpreter_04_binary_less()  {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.    
     let expr = assert_parse_line_expression("((4.5 / 2) * 2) < 4.52");
@@ -157,7 +157,7 @@ fn test_interpreter_04_binary_less()  {
 
 #[test]
 fn test_interpreter_05_binary_less_equal()  {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.    
     let expr = assert_parse_line_expression("((4.5 / 2) * 2) <= 4.50");
@@ -187,7 +187,7 @@ fn test_interpreter_05_binary_less_equal()  {
 
 #[test]
 fn test_interpreter_06_binary_bang_equal()  {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.    
     let expr = assert_parse_line_expression("((4.5 / 2) * 2) != 4.50");
@@ -237,7 +237,7 @@ fn test_interpreter_06_binary_bang_equal()  {
 
 #[test]
 fn test_interpreter_07_binary_equal_equal()  {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.    
     let expr = assert_parse_line_expression("((4.5 / 2) * 2) == 4.50");
@@ -305,7 +305,7 @@ fn test_interpreter_07_binary_equal_equal()  {
 
 #[test]
 fn test_interpreter_08_binary_minus()  {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.    
     let expr = assert_parse_line_expression("((4.5 / 2) * 2) - 1.25");
@@ -344,7 +344,7 @@ fn test_interpreter_08_binary_minus()  {
 
 #[test]
 fn test_interpreter_09_binary_plus()  {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.    
     let expr = assert_parse_line_expression("((4.5 / 2) * 2) + 1.25");
@@ -391,7 +391,7 @@ fn test_interpreter_09_binary_plus()  {
 
 #[test]
 fn test_interpreter_10_binary_slash()  {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.    
     let expr = assert_parse_line_expression("((4.5 / 2) * 2) / 1.25");
@@ -421,7 +421,7 @@ fn test_interpreter_10_binary_slash()  {
 
 #[test]
 fn test_interpreter_11_binary_star()  {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.    
     let expr = assert_parse_line_expression("((4.5 / 2) * 2) * 1.25");
@@ -460,7 +460,7 @@ fn test_interpreter_11_binary_star()  {
 
 #[test]
 fn test_interpreter_12_literal() {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.
     let expr = assert_parse_line_expression("7.04");
@@ -497,7 +497,7 @@ fn test_interpreter_12_literal() {
 
 #[test]
 fn test_interpreter_13_unary_bang() {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.
     let expr = assert_parse_line_expression("!7.04");
@@ -542,7 +542,7 @@ fn test_interpreter_13_unary_bang() {
 
 #[test]
 fn test_interpreter_14_unary_minus() {
-    let mut interpreter = make_interpreter(std::io::stdout());
+    let mut interpreter = make_interpreter_stdout();
 
     // Test 1.
     let expr = assert_parse_line_expression("-7.04");
@@ -725,7 +725,7 @@ fn test_interpreter_expr() {
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter(Cursor::new(Vec::new()));
+        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(statements);
 
         // assert_interpreter_expression_result(&entry, &res);
