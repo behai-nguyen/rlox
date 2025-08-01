@@ -9,9 +9,10 @@ use rlox::scanner::Scanner;
 use rlox::expr::Expr;
 use rlox::stmt::Stmt;
 use rlox::parser::Parser;
-use rlox::interpreter::Interpreter;
+use rlox::interpreter::{Writable, Interpreter};
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct TestScriptAndResult<'a> {
     pub script_name: &'a str,
     pub expected_result: bool,
@@ -148,13 +149,13 @@ pub fn assert_scanner_result(tested_entry: &TestScriptAndResult, test_result: &S
     // Check scanning result.
     match tested_entry.expected_result {
         true => {
-            assert!(test_result.is_ok(), "1. Error in {}", tested_entry.script_name);
+            assert!(test_result.is_ok(), "1. assert_scanner_result(). Error in {}", tested_entry.script_name);
             // TO_DO: there are no true cases yet...
         },
         false => {
-            assert!(test_result.is_err(), "3. Error in {}", tested_entry.script_name);
+            assert!(test_result.is_err(), "3. assert_scanner_result(). Error in {}", tested_entry.script_name);
             assert_eq!(test_result.as_ref().unwrap_err().to_string(), 
-                tested_entry.expected_output[0], "4. Error in {}", tested_entry.script_name);
+                tested_entry.expected_output[0], "4. assert_scanner_result(). Error in {}", tested_entry.script_name);
         }
     }
 }
@@ -164,35 +165,54 @@ pub fn assert_parser_result(tested_entry: &TestScriptAndResult, test_result: &Pa
     // Check Interpreting/evaluating result.
     match tested_entry.expected_result {
         true => {
-            assert!(test_result.is_ok(), "1. Error in {}", tested_entry.script_name);
+            assert!(test_result.is_ok(), "1. assert_parser_result(). Error in {}", tested_entry.script_name);
             // TO_DO: there are no true cases yet...
         },
-        false => {
-            assert!(test_result.is_err(), "3. Error in {}", tested_entry.script_name);
+        false => {            
+            assert!(test_result.is_err(), "3. assert_parser_result(). Error in {}", tested_entry.script_name);            
             assert_eq!(test_result.as_ref().unwrap_err().to_string(), 
-                tested_entry.expected_output[0], "4. Error in {}", tested_entry.script_name);
+                tested_entry.expected_output[0], "4. assert_parser_result(). Error in {}", tested_entry.script_name);
         }
     }
 }
 
 #[allow(dead_code)]
-pub fn make_interpreter<W: std::io::Write>(writer: W) -> Interpreter<W> {
+pub fn make_interpreter(writer: impl Writable + 'static) -> Interpreter {
     Interpreter::new(writer)
 }
 
 #[allow(dead_code)]
-pub fn extract_output_lines(interpreter: &Interpreter<Cursor<Vec<u8>>>) -> Vec<String> {
-    let output = interpreter.get_output().clone().into_inner();
-    String::from_utf8(output).unwrap()
-        .lines()
-        .map(|line| line.to_string())
-        .collect()
+pub fn make_interpreter_stdout() -> Interpreter {
+    make_interpreter(Box::new(std::io::stdout()))
+}
+
+#[allow(dead_code)]
+pub fn make_interpreter_byte_stream() -> Interpreter {
+    make_interpreter(Cursor::new(Vec::new()))
+}
+
+#[allow(dead_code)]
+pub fn extract_output_lines(interpreter: &Interpreter) -> Vec<String> {
+    // Access the boxed output
+    let output_ref: &Box<dyn Writable> = interpreter.get_output();
+    
+    // Downcast to the concrete type
+    if let Some(cursor) = output_ref.as_ref().as_any().downcast_ref::<Cursor<Vec<u8>>>() {
+        let bytes = cursor.get_ref();
+        String::from_utf8(bytes.clone()).unwrap()
+            .lines()
+            .map(|line| line.to_string())
+            .collect()        
+    } else {
+        panic!("Interpreter's output is not a Cursor<Vec<u8>>");
+    }
+
 }
 
 #[allow(dead_code)]
 pub fn assert_interpreter_result(tested_entry: &TestScriptAndResult, 
     test_result: &InterpreterResult,
-    interpreter: &Interpreter<Cursor<Vec<u8>>>) {
+    interpreter: &Interpreter) {
     // Check Interpreting/evaluating result.
     match tested_entry.expected_result {
         true => {
