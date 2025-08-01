@@ -11,4 +11,6 @@ Scripts are from
 
 - `add.lox`, `comparison.lox`, `divide.lox`, `equals.lox`, `multiply.lox`, `negate.lox`, `not_equals.lox`, and `subtract.lox`: Used in [tests/test_statements_state.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_statements_state.rs) 
 
+- `not.lox`: Used in [tests/test_functions.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_functions.rs)
+
 - `equals_class.lox`, `equals_method.lox`, `not.lox`, and `not_class.lox`: Are not yet used.
