@@ -15,3 +15,5 @@ This directory contains test modules written after implementing specific section
 5. [tests/test_control_flow.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_control_flow.rs) - [Chapter 09: Control Flow](https://craftinginterpreters.com/control-flow.html)
 
 6. [tests/test_functions.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_functions.rs) - [Chapter 10: Functions](https://craftinginterpreters.com/functions.html)
+
+7. [tests/test_resolving_and_binding.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_resolving_and_binding.rs) - [Chapter 11: Resolving and Binding](https://craftinginterpreters.com/resolving-and-binding.html)
