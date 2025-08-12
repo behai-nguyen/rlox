@@ -21,3 +21,24 @@ pub mod interpreter;
 pub mod lox_function;
 pub mod lox_return;
 pub mod lox_runtime_error;
+pub mod resolver;
+
+#[macro_export]
+macro_rules! unwrap_expr {
+    ($expr:expr, $variant:ident) => {
+        match $expr.as_ref() {
+            expr::Expr::$variant(inner) => inner,
+            _ => unreachable!(concat!("Expected Expr::", stringify!($variant))),
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! unwrap_stmt {
+    ($stmt:expr, $variant:ident) => {
+        match $stmt.as_ref() {
+            stmt::Stmt::$variant(inner) => inner,
+            _ => unreachable!(concat!("Expected Stmt::", stringify!($variant))),
+        }
+    };
+}
