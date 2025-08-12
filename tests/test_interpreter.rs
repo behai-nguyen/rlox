@@ -726,7 +726,7 @@ fn test_interpreter_expr() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         // assert_interpreter_expression_result(&entry, &res);
         assert_interpreter_result(&entry, &res, &interpreter);
