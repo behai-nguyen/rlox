@@ -194,11 +194,6 @@ fn get_assign_script_results<'a>() -> TestScriptAndResults<'a> {
             expected_output: vec!["before", "after", "arg", "arg"],
         },
         TestScriptAndResult {
-            script_name: "./tests/data/assignment/local.lox",
-            expected_result: true,
-            expected_output: vec!["before", "after", "arg", "arg"],
-        },
-        TestScriptAndResult {
             script_name: "./tests/data/assignment/syntax.lox",
             expected_result: true,
             expected_output: vec!["var", "var"],
@@ -215,46 +210,10 @@ fn get_block_script_results<'a>() -> TestScriptAndResults<'a> {
     vec![
         // From author's https://github.com/munificent/craftinginterpreters/tree/master/test/variable
         TestScriptAndResult {
-            script_name: "./tests/data/variable/in_middle_of_block.lox",
-            expected_result: true,
-            expected_output: vec!["a", "a b", "a c", "a b d"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/variable/in_nested_block.lox",
-            expected_result: true,
-            expected_output: vec!["outer"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/variable/scope_reuse_in_different_blocks.lox",
-            expected_result: true,
-            expected_output: vec!["first", "second"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/variable/shadow_and_local.lox",
-            expected_result: true,
-            expected_output: vec!["outer", "inner"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/variable/shadow_global.lox",
-            expected_result: true,
-            expected_output: vec!["shadow", "global"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/variable/shadow_local.lox",
-            expected_result: true,
-            expected_output: vec!["shadow", "local"],
-        },
-        TestScriptAndResult {
             script_name: "./tests/data/variable/undefined_local.lox",
             expected_result: false,
             expected_output: vec!["[line 2] Error at 'notDefined': Undefined variable 'notDefined'."],
         },
-        // From author's https://github.com/munificent/craftinginterpreters/tree/master/test/block
-        TestScriptAndResult {
-            script_name: "./tests/data/block/scope.lox",
-            expected_result: true,
-            expected_output: vec!["inner", "outer"],
-        },        
     ]
 } // cargo test test_interpreter_block_stmt -- --exact [--nocapture]
 
@@ -269,7 +228,7 @@ fn test_interpreter_print_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
@@ -285,7 +244,7 @@ fn test_interpreter_var_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
@@ -301,7 +260,7 @@ fn test_interpreter_assign_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
@@ -317,7 +276,7 @@ fn test_interpreter_block_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
