@@ -1,39 +1,39 @@
-//> Appendix II stmt
+/// Appendix II stmt
+use std::rc::Rc;
+
 use super::token::Token;
 use super::expr::Expr;
 use super::lox_runtime_error::LoxRuntimeError;
 
-//> stmt-block
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Block {
-    statements: Vec<Stmt>,
+    statements: Vec<Rc<Stmt>>,
 }
 
 impl Block {
-    pub fn new(statements: Vec<Stmt>) -> Self {
+    pub fn new(statements: Vec<Rc<Stmt>>) -> Self {
         Block {
             statements,
         }
     }
 
-    pub fn get_statements(&self) -> &Vec<Stmt> {
+    pub fn statements(&self) -> &Vec<Rc<Stmt>> {
         &self.statements
     }
 
 }
 
-//> stmt-class
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Class {
     name: Token,
-    superclass: Option<Expr>,
-    methods: Vec<Function>,
+    superclass: Option<Rc<Expr>>,
+    methods: Vec<Rc<Function>>,
 }
 
 impl Class {
     pub fn new(name: Token, 
-        superclass: Option<Expr>, 
-        methods: Vec<Function>
+        superclass: Option<Rc<Expr>>, 
+        methods: Vec<Rc<Function>>
     ) -> Self {
         Class {
             name,
@@ -42,51 +42,49 @@ impl Class {
         }
     }
 
-    pub fn get_name(&self) -> &Token {
+    pub fn name(&self) -> &Token {
         &self.name
     }
 
-    pub fn get_superclass(&self) -> &Option<Expr> {
+    pub fn superclass(&self) -> &Option<Rc<Expr>> {
         &self.superclass
     }
 
-    pub fn get_methods(&self) -> &Vec<Function> {
+    pub fn methods(&self) -> &Vec<Rc<Function>> {
         &self.methods
     }
 
 }
 
-//> stmt-expression
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Expression {
-    expression: Expr,
+    expression: Rc<Expr>,
 }
 
 impl Expression {
-    pub fn new(expression: Expr) -> Self {
+    pub fn new(expression: Rc<Expr>) -> Self {
         Expression {
             expression,
         }
     }
 
-    pub fn get_expression(&self) -> &Expr {
+    pub fn expression(&self) -> &Rc<Expr> {
         &self.expression
     }
 
 }
 
-//> stmt-function
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Function {
     name: Token,
     params: Vec<Token>,
-    body: Vec<Stmt>,
+    body: Vec<Rc<Stmt>>,
 }
 
 impl Function {
     pub fn new(name: Token, 
         params: Vec<Token>, 
-        body: Vec<Stmt>
+        body: Vec<Rc<Stmt>>
     ) -> Self {
         Function {
             name,
@@ -95,83 +93,80 @@ impl Function {
         }
     }
 
-    pub fn get_name(&self) -> &Token {
+    pub fn name(&self) -> &Token {
         &self.name
     }
 
-    pub fn get_params(&self) -> &Vec<Token> {
+    pub fn params(&self) -> &Vec<Token> {
         &self.params
     }
 
-    pub fn get_body(&self) -> &Vec<Stmt> {
+    pub fn body(&self) -> &Vec<Rc<Stmt>> {
         &self.body
     }
 
 }
 
-//> stmt-if
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct If {
-    condition: Expr,
-    then_branch: Box<Stmt>,
-    else_branch: Option<Box<Stmt>>,
+    condition: Rc<Expr>,
+    then_branch: Rc<Stmt>,
+    else_branch: Option<Rc<Stmt>>,
 }
 
 impl If {
-    pub fn new(condition: Expr, 
-        then_branch: Stmt, 
-        else_branch: Option<Stmt>
+    pub fn new(condition: Rc<Expr>, 
+        then_branch: Rc<Stmt>, 
+        else_branch: Option<Rc<Stmt>>
     ) -> Self {
         If {
             condition,
-            then_branch: Box::new(then_branch),
-            else_branch: else_branch.map(Box::new),
+            then_branch,
+            else_branch,
         }
     }
 
-    pub fn get_condition(&self) -> &Expr {
+    pub fn condition(&self) -> &Rc<Expr> {
         &self.condition
     }
 
-    pub fn get_then_branch(&self) -> &Box<Stmt> {
+    pub fn then_branch(&self) -> &Rc<Stmt> {
         &self.then_branch
     }
 
-    pub fn get_else_branch(&self) -> &Option<Box<Stmt>> {
+    pub fn else_branch(&self) -> &Option<Rc<Stmt>> {
         &self.else_branch
     }
 
 }
 
-//> stmt-print
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Print {
-    expression: Expr,
+    expression: Rc<Expr>,
 }
 
 impl Print {
-    pub fn new(expression: Expr) -> Self {
+    pub fn new(expression: Rc<Expr>) -> Self {
         Print {
             expression,
         }
     }
 
-    pub fn get_expression(&self) -> &Expr {
+    pub fn expression(&self) -> &Rc<Expr> {
         &self.expression
     }
 
 }
 
-//> stmt-return
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Return {
     keyword: Token,
-    value: Option<Expr>,
+    value: Option<Rc<Expr>>,
 }
 
 impl Return {
     pub fn new(keyword: Token, 
-        value: Option<Expr>
+        value: Option<Rc<Expr>>
     ) -> Self {
         Return {
             keyword,
@@ -179,26 +174,25 @@ impl Return {
         }
     }
 
-    pub fn get_keyword(&self) -> &Token {
+    pub fn keyword(&self) -> &Token {
         &self.keyword
     }
 
-    pub fn get_value(&self) -> &Option<Expr> {
+    pub fn value(&self) -> &Option<Rc<Expr>> {
         &self.value
     }
 
 }
 
-//> stmt-var
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct Var {
     name: Token,
-    initializer: Option<Expr>,
+    initializer: Option<Rc<Expr>>,
 }
 
 impl Var {
     pub fn new(name: Token, 
-        initializer: Option<Expr>
+        initializer: Option<Rc<Expr>>
     ) -> Self {
         Var {
             name,
@@ -206,45 +200,44 @@ impl Var {
         }
     }
 
-    pub fn get_name(&self) -> &Token {
+    pub fn name(&self) -> &Token {
         &self.name
     }
 
-    pub fn get_initializer(&self) -> &Option<Expr> {
+    pub fn initializer(&self) -> &Option<Rc<Expr>> {
         &self.initializer
     }
 
 }
 
-//> stmt-while
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct While {
-    condition: Expr,
-    body: Box<Stmt>,
+    condition: Rc<Expr>,
+    body: Rc<Stmt>,
 }
 
 impl While {
-    pub fn new(condition: Expr, 
-        body: Stmt
+    pub fn new(condition: Rc<Expr>, 
+        body: Rc<Stmt>
     ) -> Self {
         While {
             condition,
-            body: Box::new(body),
+            body,
         }
     }
 
-    pub fn get_condition(&self) -> &Expr {
+    pub fn condition(&self) -> &Rc<Expr> {
         &self.condition
     }
 
-    pub fn get_body(&self) -> &Box<Stmt> {
+    pub fn body(&self) -> &Rc<Stmt> {
         &self.body
     }
 
 }
 
 // Define enum
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub enum Stmt {
     Block(Block),
     Class(Class),
@@ -259,44 +252,44 @@ pub enum Stmt {
 
 // Visitor Trait
 pub trait Visitor<T> {
-    fn visit_block_stmt(&mut self, stmt: &Block) -> Result<T, LoxRuntimeError>;
-    fn visit_class_stmt(&mut self, stmt: &Class) -> Result<T, LoxRuntimeError>;
-    fn visit_expression_stmt(&mut self, stmt: &Expression) -> Result<T, LoxRuntimeError>;
-    fn visit_function_stmt(&mut self, stmt: &Function) -> Result<T, LoxRuntimeError>;
-    fn visit_if_stmt(&mut self, stmt: &If) -> Result<T, LoxRuntimeError>;
-    fn visit_print_stmt(&mut self, stmt: &Print) -> Result<T, LoxRuntimeError>;
-    fn visit_return_stmt(&mut self, stmt: &Return) -> Result<T, LoxRuntimeError>;
-    fn visit_var_stmt(&mut self, stmt: &Var) -> Result<T, LoxRuntimeError>;
-    fn visit_while_stmt(&mut self, stmt: &While) -> Result<T, LoxRuntimeError>;
+    fn visit_block_stmt(&mut self, stmt: Rc<Stmt>) -> Result<T, LoxRuntimeError>;
+    fn visit_class_stmt(&mut self, stmt: Rc<Stmt>) -> Result<T, LoxRuntimeError>;
+    fn visit_expression_stmt(&mut self, stmt: Rc<Stmt>) -> Result<T, LoxRuntimeError>;
+    fn visit_function_stmt(&mut self, stmt: Rc<Stmt>) -> Result<T, LoxRuntimeError>;
+    fn visit_if_stmt(&mut self, stmt: Rc<Stmt>) -> Result<T, LoxRuntimeError>;
+    fn visit_print_stmt(&mut self, stmt: Rc<Stmt>) -> Result<T, LoxRuntimeError>;
+    fn visit_return_stmt(&mut self, stmt: Rc<Stmt>) -> Result<T, LoxRuntimeError>;
+    fn visit_var_stmt(&mut self, stmt: Rc<Stmt>) -> Result<T, LoxRuntimeError>;
+    fn visit_while_stmt(&mut self, stmt: Rc<Stmt>) -> Result<T, LoxRuntimeError>;
 }
 
 // Implement `accept()`, `accept_ref()` for `Stmt`
 impl Stmt {
-    pub fn accept<T>(&mut self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {
-        match self {
-            Stmt::Block(val) => visitor.visit_block_stmt(val),
-            Stmt::Class(val) => visitor.visit_class_stmt(val),
-            Stmt::Expression(val) => visitor.visit_expression_stmt(val),
-            Stmt::Function(val) => visitor.visit_function_stmt(val),
-            Stmt::If(val) => visitor.visit_if_stmt(val),
-            Stmt::Print(val) => visitor.visit_print_stmt(val),
-            Stmt::Return(val) => visitor.visit_return_stmt(val),
-            Stmt::Var(val) => visitor.visit_var_stmt(val),
-            Stmt::While(val) => visitor.visit_while_stmt(val),
+    pub fn accept<T>(stmt: Rc<Stmt>, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {
+        match stmt.as_ref() {
+            Stmt::Block(_) => visitor.visit_block_stmt(stmt),
+            Stmt::Class(_) => visitor.visit_class_stmt(stmt),
+            Stmt::Expression(_) => visitor.visit_expression_stmt(stmt),
+            Stmt::Function(_) => visitor.visit_function_stmt(stmt),
+            Stmt::If(_) => visitor.visit_if_stmt(stmt),
+            Stmt::Print(_) => visitor.visit_print_stmt(stmt),
+            Stmt::Return(_) => visitor.visit_return_stmt(stmt),
+            Stmt::Var(_) => visitor.visit_var_stmt(stmt),
+            Stmt::While(_) => visitor.visit_while_stmt(stmt),
         }
     }
 
-    pub fn accept_ref<T>(&self, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {
-        match self {
-            Stmt::Block(val) => visitor.visit_block_stmt(val),
-            Stmt::Class(val) => visitor.visit_class_stmt(val),
-            Stmt::Expression(val) => visitor.visit_expression_stmt(val),
-            Stmt::Function(val) => visitor.visit_function_stmt(val),
-            Stmt::If(val) => visitor.visit_if_stmt(val),
-            Stmt::Print(val) => visitor.visit_print_stmt(val),
-            Stmt::Return(val) => visitor.visit_return_stmt(val),
-            Stmt::Var(val) => visitor.visit_var_stmt(val),
-            Stmt::While(val) => visitor.visit_while_stmt(val),
+    pub fn accept_ref<T>(stmt: Rc<Stmt>, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {
+        match stmt.as_ref() {
+            Stmt::Block(_) => visitor.visit_block_stmt(stmt),
+            Stmt::Class(_) => visitor.visit_class_stmt(stmt),
+            Stmt::Expression(_) => visitor.visit_expression_stmt(stmt),
+            Stmt::Function(_) => visitor.visit_function_stmt(stmt),
+            Stmt::If(_) => visitor.visit_if_stmt(stmt),
+            Stmt::Print(_) => visitor.visit_print_stmt(stmt),
+            Stmt::Return(_) => visitor.visit_return_stmt(stmt),
+            Stmt::Var(_) => visitor.visit_var_stmt(stmt),
+            Stmt::While(_) => visitor.visit_while_stmt(stmt),
         }
     }
 }
