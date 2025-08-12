@@ -84,48 +84,6 @@ fn get_function_objects_script_results<'a>() -> TestScriptAndResults<'a> {
 
 fn get_return_statements_script_results<'a>() -> TestScriptAndResults<'a> {
     vec![
-        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/for
-        TestScriptAndResult {
-            script_name: "./tests/data/for/return_inside.lox",
-            expected_result: true,
-            expected_output: vec!["i"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/for/syntax.lox",
-            expected_result: true,
-            expected_output: vec!["1.0", "2.0", "3.0", "0.0", "1.0", "2.0", 
-                "done", "0.0", "1.0", "0.0", "1.0", "2.0", "0.0", "1.0"],
-        },        
-        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/function
-        TestScriptAndResult {
-            script_name: "./tests/data/function/mutual_recursion.lox",
-            expected_result: true,
-            expected_output: vec!["true", "true"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/function/nested_call_with_arguments.lox",
-            expected_result: true,
-            expected_output: vec!["hello world"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/function/parameters.lox",
-            expected_result: true,
-            // Normalise f64.
-            expected_output: vec!["0.0", "1.0", "3.0", "6.0", "10.0", 
-                "15.0", "21.0", "28.0", "36.0"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/function/recursion.lox",
-            expected_result: true,
-            // Normalise f64.
-            expected_output: vec!["21.0"],
-        },        
-        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/while
-        TestScriptAndResult {
-            script_name: "./tests/data/while/return_inside.lox",
-            expected_result: true,
-            expected_output: vec!["i"],
-        },
         // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/return
         TestScriptAndResult {
             script_name: "./tests/data/return/after_else.lox",
@@ -158,97 +116,11 @@ fn get_return_statements_script_results<'a>() -> TestScriptAndResults<'a> {
 fn get_local_funs_and_closures_results<'a>() -> TestScriptAndResults<'a> {
     vec![
         // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/closure
-        TestScriptAndResult {
-            script_name: "./tests/data/closure/assign_to_closure.lox",
-            expected_result: true,
-            expected_output: vec!["local", "after f", "after f", "after g"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/closure/closed_closure_in_function.lox",
-            expected_result: true,
-            expected_output: vec!["local"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/closure/close_over_function_parameter.lox",
-            expected_result: true,
-            expected_output: vec!["param"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/closure/close_over_later_variable.lox",
-            expected_result: true,
-            expected_output: vec!["b", "a"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/closure/nested_closure.lox",
-            expected_result: true,
-            expected_output: vec!["a", "b", "c"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/closure/open_closure_in_function.lox",
-            expected_result: true,
-            expected_output: vec!["local"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/closure/reference_closure_multiple_times.lox",
-            expected_result: true,
-            expected_output: vec!["a", "a"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/closure/reuse_closure_slot.lox",
-            expected_result: true,
-            expected_output: vec!["a"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/closure/shadow_closure_with_local.lox",
-            expected_result: true,
-            expected_output: vec!["closure", "shadow", "closure"],
-        },
+        // Is also tests/test_resolving_and_binding.rs
         TestScriptAndResult {
             script_name: "./tests/data/closure/unused_closure.lox",
             expected_result: true,
             expected_output: vec!["ok"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/closure/unused_later_closure.lox",
-            expected_result: true,
-            expected_output: vec!["a"],
-        },
-        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/for
-        TestScriptAndResult {
-            script_name: "./tests/data/for/closure_in_body.lox",
-            expected_result: true,
-            // Normalise f64.
-            expected_output: vec!["4.0", "1.0", "4.0", "2.0", "4.0", "3.0"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/for/return_closure.lox",
-            expected_result: true,
-            expected_output: vec!["i"],
-        },
-        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/function
-        TestScriptAndResult {
-            script_name: "./tests/data/function/local_recursion.lox",
-            expected_result: true,
-            // Normalise f64.
-            expected_output: vec!["21.0"],
-        },
-        // Author's https://craftinginterpreters.com/functions.html#local-functions-and-closures
-        TestScriptAndResult {
-            script_name: "./tests/data/function/book_make_counter.lox",
-            expected_result: true,
-            expected_output: vec!["1.0", "2.0"],
-        },
-        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/while
-        TestScriptAndResult {
-            script_name: "./tests/data/while/closure_in_body.lox",
-            expected_result: true,
-            // Normalise f64.
-            expected_output: vec!["1.0", "2.0", "3.0"],
-        },
-        TestScriptAndResult {
-            script_name: "./tests/data/while/return_closure.lox",
-            expected_result: true,
-            expected_output: vec!["i"],
         },
     ]
 } // cargo test test_interpreter_local_funs_and_closures_stmt -- --exact [--nocapture]
@@ -264,7 +136,7 @@ fn test_interpreter_function_objects_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
@@ -281,7 +153,7 @@ fn test_interpreter_return_statements_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
@@ -298,7 +170,7 @@ fn test_interpreter_local_funs_and_closures_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
