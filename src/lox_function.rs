@@ -31,7 +31,7 @@ impl LoxFunction {
 
 impl LoxCallable for LoxFunction {
     fn arity(&self) -> usize {
-        self.declaration.get_params().len()
+        self.declaration.params().len()
     }
 
     fn call(&self, interpreter: &mut Interpreter, arguments: Vec<Value>) -> Result<Value, LoxRuntimeError> {
@@ -39,12 +39,12 @@ impl LoxCallable for LoxFunction {
             Environment::new_local_scope(Rc::clone(&self.closure))
         ));
 
-        for (i, param) in self.declaration.get_params().iter().enumerate() {
+        for (i, param) in self.declaration.params().iter().enumerate() {
             let arg = arguments.get(i).unwrap_or(&Value::Nil).clone();
-            environment.borrow_mut().define(param.get_lexeme().to_string(), arg);
+            environment.borrow_mut().define(param.lexeme().to_string(), arg);
         }
 
-        return match interpreter.execute_block(&self.declaration.get_body(), environment) {
+        return match interpreter.execute_block(&self.declaration.body(), environment) {
             Err(LoxRuntimeError::Return(ret)) => {
                 Ok(ret.value)
             }
@@ -60,6 +60,6 @@ impl LoxCallable for LoxFunction {
     }
 
     fn to_string(&self) -> String {
-        format!("<fn {}>", self.declaration.get_name().get_lexeme())
+        format!("<fn {}>", self.declaration.name().lexeme())
     }
 }
