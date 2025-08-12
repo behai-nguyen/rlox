@@ -1,0 +1,18 @@
+// This script is an example from Chapter 11, at the end of the section 
+// "Static Scope" https://craftinginterpreters.com/resolving-and-binding.html#static-scope
+//
+
+var a = "global";
+{
+  fun showA() {
+    print a;
+  }
+
+  showA();
+  var a = "block";
+  showA();
+}
+
+// Expect:
+// global
+// global
