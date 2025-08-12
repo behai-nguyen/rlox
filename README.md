@@ -113,6 +113,16 @@ git clone -b v0.5.0 https://github.com/behai-nguyen/rlox.git
 
 This post covers Chapter 10 of <a href="https://craftinginterpreters.com/functions.html" title="Functions" target="_blank">Crafting Interpreters</a>: <strong>Functions</strong>. The following new syntax elements have been implemented: <code>Expr::Call</code>, <code>Stmt::Function</code>, and <code>Stmt::Return</code>. Lox now supports <code>fun</code>, <code>return</code>, and <code>closures</code>. This post discusses several implementation details that deserve attention.
 
+8. [rlox: A Rust Implementation of “Crafting Interpreters” – Resolving and Binding](https://behainguyen.wordpress.com/2025/08/12/rlox-a-rust-implementation-of-crafting-interpreters-resolving-and-binding/)
+
+The code version for the above post has been tagged with **v0.5.1**. It can be cloned with:
+  
+```
+git clone -b v0.5.1 https://github.com/behai-nguyen/rlox.git
+```
+
+This post covers Chapter 11 of <a href="https://craftinginterpreters.com/resolving-and-binding.html" title="Resolving and Binding" target="_blank">Crafting Interpreters</a>: <strong>Resolving and Binding</strong>. No new syntax elements are introduced in this chapter. Instead, Chapter 11 serves as a kind of patch to Chapter 10: it ensures that variables are resolved within their correct <code>closures</code>. The code for this chapter is relatively straightforward, but I made a mistake that introduced a subtle bug—one that took me a long time to diagnose and finally fix.
+
 ## License
 [MIT license](http://www.opensource.org/licenses/mit-license.php)
 and the [Creative Commons](  https://creativecommons.org/licenses/by-nc-nd/4.0/).
