@@ -55,18 +55,18 @@ impl Environment {
     }
 
     pub fn get(&self, name: &Token) -> Result<Value, LoxError> {
-        if let Some(token) = self.values.get(name.get_lexeme()) {
+        if let Some(token) = self.values.get(name.lexeme()) {
             Ok(token.clone())
         } else {
             if let Some(env) = &self.enclosing {
                 return env.borrow().get(name);
             }
-            Err(error(name, &format!("Undefined variable '{}'.", name.get_lexeme())))
+            Err(error(name, &format!("Undefined variable '{}'.", name.lexeme())))
         }
     }
 
     pub fn assign(&mut self, name: &Token, value: Value) -> Result<(), LoxError> {
-        match self.values.get_mut(name.get_lexeme()) {
+        match self.values.get_mut(name.lexeme()) {
             Some(val) => {
                 *val = value;
                 Ok(())
@@ -75,7 +75,7 @@ impl Environment {
                 if let Some(env) = &mut self.enclosing {
                     env.borrow_mut().assign(name, value)
                 } else {
-                    Err(error(name, &format!("Undefined variable '{}'.", name.get_lexeme())))
+                    Err(error(name, &format!("Undefined variable '{}'.", name.lexeme())))
                 }
             }
         }
@@ -83,6 +83,32 @@ impl Environment {
     
     pub fn define(&mut self, name: String, value: Value) {
         self.values.insert(name, value);
+    }
+
+    fn ancestor(env: &EnvironmentRef, name: &Token, distance: usize) -> Result<EnvironmentRef, LoxError> {
+        let mut environment = Rc::clone(env);
+
+        for _ in 0..distance {
+            let next = {
+                let borrowed = environment.borrow();
+                borrowed.enclosing.clone()
+            };
+
+            environment = next.ok_or_else(|| error(name, "No enclosing environment found."))?;
+        }
+
+        Ok(environment)
+    }
+
+    pub fn get_at(env: &EnvironmentRef, name: &Token, distance: usize) -> Result<Value, LoxError> {
+        Self::ancestor(env, name, distance)?.borrow().get(name)
+    }
+
+    pub fn assign_at(env: &EnvironmentRef, distance: usize, 
+        name: &Token, value: Value) -> Result<(), LoxError> {
+        Self::ancestor(env, name, distance)?.borrow_mut().values.insert(
+            name.lexeme().to_string(), value);
+        Ok(())
     }
 }
 
