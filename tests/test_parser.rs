@@ -21,6 +21,8 @@
 //!     * cargo test test_parser_function_objects_stmt -- --exact [--nocapture]
 //! 
 
+use std::rc::Rc;
+
 mod test_common;
 
 use crate::test_common::{
@@ -256,7 +258,7 @@ fn test_parser_expr_01() {
 
     // Note: the scanner normalises numeric (f64) literals, and printer uses 
     // {:?} to print out f64 value, see method visit_literal_expr().
-    assert_eq!("(+ (group (- 5.0 (group (- 3.0 1.0)))) (- 1.0))", AstPrinter{}.print_expression(&expr).unwrap());
+    assert_eq!("(+ (group (- 5.0 (group (- 3.0 1.0)))) (- 1.0))", AstPrinter{}.print_expression(expr).unwrap());
 }
 
 #[test]
@@ -283,12 +285,12 @@ fn test_parser_expr_02() {
     // this: Might be my interpreted input expression is not what the author had in
     // mind?
     // 
-    assert_ne!("(* (- 123.0) (group 45.67))", AstPrinter{}.print_expression(&expr).unwrap());
+    assert_ne!("(* (- 123.0) (group 45.67))", AstPrinter{}.print_expression(Rc::clone(&expr)).unwrap());
 
     //
     // It get this:
     //
-    assert_eq!("(group (* (- 123.0) 45.67))", AstPrinter{}.print_expression(&expr).unwrap());
+    assert_eq!("(group (* (- 123.0) 45.67))", AstPrinter{}.print_expression(expr).unwrap());
 }
 
 #[test]
@@ -313,7 +315,7 @@ fn test_parser_expr_03() {
     // In the stated section, the author does not state what the natural arithmetic 
     // expression is. The author expected this output. 
     // 
-    assert_eq!("(* (- 123.0) (group 45.67))", AstPrinter{}.print_expression(&expr).unwrap());
+    assert_eq!("(* (- 123.0) (group 45.67))", AstPrinter{}.print_expression(expr).unwrap());
 }
 
 #[test]
