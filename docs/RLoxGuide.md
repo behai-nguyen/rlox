@@ -1,4 +1,5 @@
 <!-- Date Created: 13/07/2025. -->
+<!-- https://github.com/behai-nguyen/rlox/blob/main/docs/RLoxGuide.md -->
 
 # Guide to the Lox Language
 
@@ -38,6 +39,8 @@ For a complete documentation, please see the author original [The Lox Language](
 * [Functions](#functions)
     - [Example 1](#example-1-5)
     - [Example 2](#example-2-5)
+    - [Example 3: Scope Resolution](#example-3-scope-resolution)
+    - [Example 4: Invalid Variable Initialisation](#example-4-invalid-variable-initialisation)
 
 ## Data Types
 
@@ -441,6 +444,51 @@ fun fib(n) {
 var start = clock();
 print fib(22) == 17711;
 print clock() - start;
+```
+
+### Example 3: Scope Resolution
+
+Consider the Lox script at the end of the 
+[Static Scope](https://craftinginterpreters.com/resolving-and-binding.html#static-scope)
+section:
+
+```lox
+var a = "global";
+{
+  fun showA() {
+    print a;
+  }
+
+  showA();
+  var a = "block";
+  showA();
+}
+```
+
+It correctly outputs:
+
+```
+global
+global
+```
+
+### Example 4: Invalid Variable Initialisation
+
+This Lox script is also from the 
+[Static Scope](https://craftinginterpreters.com/resolving-and-binding.html#static-scope)
+section:
+
+```lox
+var a = "outer";
+{
+  var a = a;
+}
+```
+
+It raises the following resolution error:
+
+```
+Error: [line 3] Error at 'a': Can't read local variable in its own initializer.
 ```
 
 > This guide will expand as more of the Lox language is implemented—including statements, functions, and classes.
