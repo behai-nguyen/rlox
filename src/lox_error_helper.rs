@@ -14,5 +14,5 @@ pub fn scanner_error(line: usize, c: char, message: &str) -> LoxError {
 /// Global error report function. All code should call this 
 /// to create return error for `Result<T, LoxError>`.
 pub fn error(token: &Token, message: &str) -> LoxError {
-    LoxError::new(token.get_line(), token.get_lexeme(), &format!("{}", message))
+    LoxError::new(token.line(), token.lexeme(), &format!("{}", message))
 }
