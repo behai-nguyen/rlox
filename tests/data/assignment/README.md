@@ -9,6 +9,8 @@ Scripts are from
 
 - `grouping.lox`, `infix_operator.lox`, and `prefix_operator.lox`: Used in [tests/test_parser.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_parser.rs)
 
-- `associativity.lox`, `global.lox`, `syntax.lox`, `undefined.lox`, and `local.lox`: Used in [tests/test_statements_state.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_statements_state.rs) 
+- `associativity.lox`, `global.lox`, `syntax.lox`, and `undefined.lox`: Used in [tests/test_statements_state.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_statements_state.rs) 
+
+- `local.lox`: Used in [tests/test_resolving_and_binding.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_resolving_and_binding.rs)
 
 - `to_this.lox`: Is not yet used.

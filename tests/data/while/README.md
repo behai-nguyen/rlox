@@ -13,6 +13,6 @@ Scripts are from
 
 - `syntax`: Used in [tests/test_control_flow.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_control_flow.rs) (not a mistake!)
 
-- `return_inside.lox`, `closure_in_body.lox`, and `return_closure.lox`: Used in [tests/test_functions.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_functions.rs)
+- `return_inside.lox`, `closure_in_body.lox`, and `return_closure.lox`: Used in [tests/test_resolving_and_binding.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_resolving_and_binding.rs)
 
 - `closure_in_body.lox`, and `return_closure.lox`: Are not yet used.
