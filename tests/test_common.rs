@@ -2,8 +2,10 @@
 
 use std::fs::read_to_string;
 use std::io::Cursor;
+use std::rc::Rc;
 
 use rlox::lox_error::LoxError;
+use rlox::lox_runtime_error::LoxRuntimeError;
 use rlox::token::{LiteralValue, Token};
 use rlox::scanner::Scanner;
 use rlox::expr::Expr;
@@ -26,7 +28,10 @@ pub type TestScriptAndResults<'a> = Vec<TestScriptAndResult<'a>>;
 pub type ScannerResult = Result<Vec<Token>, LoxError>;
 
 #[allow(dead_code)]
-pub type ParserResult = Result<Vec<Stmt>, LoxError>;
+pub type ParserResult = Result<Vec<Rc<Stmt>>, LoxError>;
+
+#[allow(dead_code)]
+pub type ResolverResult = Result<(), LoxRuntimeError>;
 
 #[allow(dead_code)]
 pub type InterpreterResult = Result<(), LoxError>;
@@ -66,12 +71,13 @@ pub fn assert_parse_script_expression(script_name: &str) -> Expr {
     // Ensure parsing is successful.
     assert!(res.is_ok(), "assert_parse_script_expression() error: {}", script_name);
     
-    res.unwrap()
+    // This also works: res.unwrap().as_ref().clone()
+    Rc::try_unwrap(res.unwrap()).expect("Rc still has other owners")
 }
 
 #[allow(dead_code)]
 // Load script and parse it.
-pub fn assert_parse_script_statements(script_name: &str) -> Vec<Stmt> {
+pub fn assert_parse_script_statements(script_name: &str) -> Vec<Rc<Stmt>> {
     // Ensure scripted loaded and scanned successfully.
     let tokens = assert_scan_script(script_name);
 
@@ -103,7 +109,8 @@ pub fn assert_parse_line_expression(line: &str) -> Expr {
     // Ensure parsing is successful.
     assert!(res.is_ok(), "assert_parse_line_expression() parse error: {}", line);
     
-    res.unwrap()
+    // This also work: res.unwrap().as_ref().clone()
+    Rc::try_unwrap(res.unwrap()).expect("Rc still has other owners")
 }
 
 #[allow(dead_code)]
@@ -172,6 +179,22 @@ pub fn assert_parser_result(tested_entry: &TestScriptAndResult, test_result: &Pa
             assert!(test_result.is_err(), "3. assert_parser_result(). Error in {}", tested_entry.script_name);            
             assert_eq!(test_result.as_ref().unwrap_err().to_string(), 
                 tested_entry.expected_output[0], "4. assert_parser_result(). Error in {}", tested_entry.script_name);
+        }
+    }
+}
+
+#[allow(dead_code)]
+pub fn assert_resolver_result(tested_entry: &TestScriptAndResult, test_result: &ResolverResult) {
+    // Check Interpreting/evaluating result.
+    match tested_entry.expected_result {
+        true => {
+            assert!(test_result.is_ok(), "1. assert_resolver_result(). Error in {}", tested_entry.script_name);
+            // TO_DO: there are no true cases yet...
+        },
+        false => {            
+            assert!(test_result.is_err(), "3. assert_resolver_result(). Error in {}", tested_entry.script_name);            
+            assert_eq!(test_result.as_ref().unwrap_err().to_string(), 
+                tested_entry.expected_output[0], "4. assert_resolver_result(). Error in {}", tested_entry.script_name);
         }
     }
 }
