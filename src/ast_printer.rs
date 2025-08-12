@@ -10,17 +10,20 @@
 // 
 //     * cargo test ast_printer::tests
 
+use std::rc::Rc;
+
 use super::lox_error::LoxError;
 use super::lox_runtime_error::LoxRuntimeError;
 use super::token::{LiteralValue, Token};
 
 use super::expr;
 use super::stmt;
+use super::{unwrap_expr, unwrap_stmt};
 
 // Rust-specific.
 pub enum AstFragment<'a> {
-    Expr(&'a expr::Expr),
-    Stmt(&'a stmt::Stmt),
+    Expr(Rc<expr::Expr>),
+    Stmt(Rc<stmt::Stmt>),
     Token(&'a Token),
     Text(String),
     Group(Vec<AstFragment<'a>>),
@@ -31,12 +34,14 @@ impl<'a> AstFragment<'a> {
         builder.push(' ');
         match self {
             AstFragment::Expr(e) => builder.push_str(
-                &e.accept_ref(printer).unwrap_or_else(|err| format!("[Error printing expression: {}]", err))
+                &expr::Expr::accept_ref(e.clone(), printer)
+                    .unwrap_or_else(|err| format!("[Error printing expression: {}]", err))
             ),
             AstFragment::Stmt(s) => builder.push_str(
-                &s.accept_ref(printer).unwrap_or_else(|err| format!("[Error printing statement: {}]", err))
+                &stmt::Stmt::accept_ref(Rc::clone(s), printer)
+                    .unwrap_or_else(|err| format!("[Error printing statement: {}]", err))
             ),
-            AstFragment::Token(t) => builder.push_str(t.get_lexeme()),
+            AstFragment::Token(t) => builder.push_str(t.lexeme()),
             AstFragment::Text(s) => builder.push_str(s),
             AstFragment::Group(g) => {
                 for sub in g {
@@ -50,19 +55,19 @@ impl<'a> AstFragment<'a> {
 pub struct AstPrinter;
 
 impl AstPrinter {
-    pub fn print_expression(&mut self, expr: &expr::Expr) -> Result<String, LoxRuntimeError> {
-        expr.accept_ref(self)
+    pub fn print_expression(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        expr::Expr::accept_ref(expr, self)
     }
 
-    pub fn print_statement(&mut self, stmt: &stmt::Stmt) -> Result<String, LoxRuntimeError> {
-        stmt.accept_ref(self)
+    pub fn print_statement(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
+        stmt::Stmt::accept_ref(stmt, self)
     }
 
-    fn parenthesize(&mut self, name: &str, exprs: &[&expr::Expr]) -> Result<String, LoxError> {
+    fn parenthesize(&mut self, name: &str, exprs: &[Rc<expr::Expr>]) -> Result<String, LoxError> {
         let mut builder = String::from(format!("({}", name));
 
         for e in exprs {
-            builder.push_str(&format!(" {}", e.accept_ref(self)?));
+            builder.push_str(&format!(" {}", expr::Expr::accept_ref(e.clone(), self)?));
         }        
         builder.push_str(")");
 
@@ -73,13 +78,15 @@ impl AstPrinter {
         for part in parts {
             builder.push(' ');
             match part {
-                AstFragment::Expr(expr) => builder.push_str(
-                    &expr.accept_ref(self).unwrap_or_else(|err| format!("[Error printing expression: {}]", err))
-                ),
+                AstFragment::Expr(e) => builder.push_str(
+                    &expr::Expr::accept_ref(e.clone(), self)
+                        .unwrap_or_else(|err| format!("[Error printing expression: {}]", err))
+                ),                
                 AstFragment::Stmt(stmt) => builder.push_str(
-                    &stmt.accept_ref(self).unwrap_or_else(|err| format!("[Error printing statement: {}]", err))
+                    &stmt::Stmt::accept_ref(Rc::clone(stmt), self)
+                        .unwrap_or_else(|err| format!("[Error printing statement: {}]", err))
                 ),
-                AstFragment::Token(token) => builder.push_str(token.get_lexeme()),
+                AstFragment::Token(token) => builder.push_str(token.lexeme()),
                 AstFragment::Text(s) => builder.push_str(s),
                 AstFragment::Group(subparts) => self.transform(builder, subparts),
             }
@@ -103,51 +110,63 @@ impl AstPrinter {
 
 impl expr::Visitor<String> for AstPrinter {
     // My note: untested.
-    fn visit_assign_expr(&mut self, expr: &expr::Assign) -> Result<String, LoxRuntimeError> {
+    fn visit_assign_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let assign = unwrap_expr!(expr, Assign);
+
         Ok(self.parenthesize2(
-            &expr.get_name().get_lexeme(),
+            &assign.name().lexeme(),
             &[
-                AstFragment::Expr(&expr.get_value()),
+                AstFragment::Expr(Rc::clone(assign.value())),
             ],
         )?)
     }
 
-    fn visit_binary_expr(&mut self, expr: &expr::Binary) -> Result<String, LoxRuntimeError> {
-        Ok(self.parenthesize(expr.get_operator().get_lexeme(), 
-        &[expr.get_left(), expr.get_right()])?)
+    fn visit_binary_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let binary = unwrap_expr!(expr, Binary);
+
+        Ok(self.parenthesize(binary.operator().lexeme(), 
+        &[Rc::clone(binary.left()), Rc::clone(binary.right())])?)
     }    
 
     // My note: untested.
-    fn visit_call_expr(&mut self, expr: &expr::Call) -> Result<String, LoxRuntimeError> {
-        let mut fragments = vec![AstFragment::Expr(expr.get_callee())];
+    fn visit_call_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let call = unwrap_expr!(expr, Call);
+
+        let mut fragments = vec![AstFragment::Expr(Rc::clone(call.callee()))];
 
         // Map each argument into an AstFragment::Expr and extend the list
         fragments.extend(
-            expr.get_arguments()
+            call.arguments()
                 .iter()
-                .map(|arg| AstFragment::Expr(arg))
+                .map(|arg| AstFragment::Expr(arg.clone()))
         );
 
         Ok(self.parenthesize2("call", &fragments)?)
     }
 
     // My note: untested.
-    fn visit_get_expr(&mut self, expr: &expr::Get) -> Result<String, LoxRuntimeError> {
+    fn visit_get_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let get = unwrap_expr!(expr, Get);
+
         Ok(self.parenthesize2(
             ".",
             &[
-                AstFragment::Expr(&expr.get_object()),
-                AstFragment::Text(expr.get_name().get_lexeme().to_string()),
+                AstFragment::Expr(Rc::clone(get.object())),
+                AstFragment::Text(get.name().lexeme().to_string()),
             ],
         )?)
     }
     
-    fn visit_grouping_expr(&mut self, expr: &expr::Grouping) -> Result<String, LoxRuntimeError> {
-        Ok(self.parenthesize("group", &[expr.get_expression()])?)
+    fn visit_grouping_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let grouping = unwrap_expr!(expr, Grouping);
+
+        Ok(self.parenthesize("group", &[Rc::clone(grouping.expression())])?)
     }
 
-    fn visit_literal_expr(&mut self, expr: &expr::Literal) -> Result<String, LoxRuntimeError> {
-        match expr.get_value() {
+    fn visit_literal_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let literal = unwrap_expr!(expr, Literal);
+
+        match literal.value() {
             LiteralValue::Number(n) => Ok(format!("{:?}", n)),
             LiteralValue::String(s) => Ok(s.to_string()),
             LiteralValue::Boolean(b) => Ok(b.to_string()),
@@ -156,83 +175,98 @@ impl expr::Visitor<String> for AstPrinter {
     }
 
     // My note: untested.
-    fn visit_logical_expr(&mut self, expr: &expr::Logical) -> Result<String, LoxRuntimeError> {
+    fn visit_logical_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let logical = unwrap_expr!(expr, Logical);
+
         Ok(self.parenthesize(
-            expr.get_operator().get_lexeme(), 
+            logical.operator().lexeme(), 
             &[
-                        expr.get_left(),
-                        expr.get_right(),
+                        Rc::clone(logical.left()),
+                        Rc::clone(logical.right()),
                     ]
         )?)
     }
 
     // My note: untested.
-    fn visit_set_expr(&mut self, expr: &expr::Set) -> Result<String, LoxRuntimeError> {
+    fn visit_set_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let set = unwrap_expr!(expr, Set);
+
         Ok(self.parenthesize2(
             "=",
             &[
-                AstFragment::Expr(&expr.get_object()),
-                AstFragment::Text(expr.get_name().get_lexeme().to_string()),
-                AstFragment::Expr(&expr.get_value()),
+                AstFragment::Expr(Rc::clone(set.object())),
+                AstFragment::Text(set.name().lexeme().to_string()),
+                AstFragment::Expr(Rc::clone(set.value())),
             ],
         )?)
     }
 
     // My note: untested.
-    fn visit_super_expr(&mut self, expr: &expr::Super) -> Result<String, LoxRuntimeError> {
+    fn visit_super_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let inner = unwrap_expr!(expr, Super);
+
         Ok(self.parenthesize2(
             "super",
             &[
-                AstFragment::Token(&expr.get_method()),
+                AstFragment::Token(&inner.method()),
             ],
         )?)
     }
 
     // My note: untested.
-    fn visit_this_expr(&mut self, _: &expr::This) -> Result<String, LoxRuntimeError> {
+    fn visit_this_expr(&mut self, _: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
         Ok("&self".to_string()) // TO_DO: what was the intention?
     }
 
-    fn visit_unary_expr(&mut self, expr: &expr::Unary) -> Result<String, LoxRuntimeError> {
-        Ok(self.parenthesize(expr.get_operator().get_lexeme(), 
-        &[expr.get_right()])?)
+    fn visit_unary_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let unary = unwrap_expr!(expr, Unary);
+
+        Ok(self.parenthesize(unary.operator().lexeme(), 
+        &[Rc::clone(unary.right())])?)
     }
 
     // My note: untested.
-    fn visit_variable_expr(&mut self, expr: &expr::Variable) -> Result<String, LoxRuntimeError> {
-        Ok(expr.get_name().get_lexeme().to_string())
+    fn visit_variable_expr(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
+        let variable = unwrap_expr!(expr, Variable);
+
+        Ok(variable.name().lexeme().to_string())
     }
 }
 
 impl stmt::Visitor<String> for AstPrinter {
     // My note: untested.
-    fn visit_block_stmt(&mut self, stmt: &stmt::Block) -> Result<String, LoxRuntimeError> {
+    fn visit_block_stmt(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
+        let block = unwrap_stmt!(stmt, Block);
+
         let mut fragments = vec![];
 
         // Map each argument into an AstFragment::Expr and extend the list
         fragments.extend(
-            stmt.get_statements()
+            block.statements()
                 .iter()
-                .map(|arg| AstFragment::Stmt(arg))
+                .map(|arg| AstFragment::Stmt(arg.clone()))
         );
 
         Ok(self.parenthesize2("block", &fragments)?)
     }
 
     // My note: untested.
-    fn visit_class_stmt(&mut self, stmt: &stmt::Class) -> Result<String, LoxRuntimeError> {
+    fn visit_class_stmt(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
+        let class = unwrap_stmt!(stmt, Class);
+
         let mut builder = String::new();
         builder.push_str("(class ");
-        builder.push_str(stmt.get_name().get_lexeme());
+        builder.push_str(class.name().lexeme());
 
-        if let Some(superclass) = stmt.get_superclass() {
+        if let Some(superclass) = class.superclass() {
             builder.push_str(" < ");
-            builder.push_str(&self.print_expression(superclass)?);
+            builder.push_str(&self.print_expression(Rc::clone(superclass))?);
         }
 
-        for method in stmt.get_methods() {
+        for method in class.methods() {
             builder.push(' ');
-            builder.push_str(&self.print_statement(&stmt::Stmt::Function(method.clone()))?);
+            let stmt_function = Rc::new(stmt::Stmt::Function(method.as_ref().clone()));
+            builder.push_str(&self.print_statement(stmt_function)?);
         }
 
         builder.push(')');
@@ -240,31 +274,35 @@ impl stmt::Visitor<String> for AstPrinter {
     }
 
     // My note: untested.
-    fn visit_expression_stmt(&mut self, stmt: &stmt::Expression) -> Result<String, LoxRuntimeError> {
+    fn visit_expression_stmt(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
+        let expression = unwrap_stmt!(stmt, Expression);
+
         Ok(self.parenthesize2(
             ";",
             &[
-                AstFragment::Expr(&stmt.get_expression()),
+                AstFragment::Expr(Rc::clone(expression.expression())),
             ],
         )?)
     }
 
     // My note: untested.
-    fn visit_function_stmt(&mut self, stmt: &stmt::Function) -> Result<String, LoxRuntimeError> {
+    fn visit_function_stmt(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
+        let function = unwrap_stmt!(stmt, Function);
+
         let mut builder = String::new();
         builder.push_str("(fun ");
-        builder.push_str(stmt.get_name().get_lexeme());
+        builder.push_str(function.name().lexeme());
         builder.push_str("(");
 
-        for (i, param) in stmt.get_params().iter().enumerate() {
+        for (i, param) in function.params().iter().enumerate() {
             if i != 0 { builder.push_str(" "); }
-            builder.push_str(param.get_lexeme());
+            builder.push_str(param.lexeme());
         }
 
         builder.push_str(") ");
 
-        for body in stmt.get_body() {
-            builder.push_str(&body.accept_ref(self)?);
+        for body in function.body() {
+            builder.push_str(&stmt::Stmt::accept_ref(Rc::clone(body), self)?);
         }
 
         builder.push_str(")");
@@ -272,18 +310,21 @@ impl stmt::Visitor<String> for AstPrinter {
     }
 
     // My note: untested.
-    fn visit_if_stmt(&mut self, stmt: &stmt::If) -> Result<String, LoxRuntimeError> {
+    fn visit_if_stmt(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
+        let inner = unwrap_stmt!(stmt, If);
+        let binding = inner.condition();
+
         let mut fragments = vec![
-            AstFragment::Expr(stmt.get_condition()),
+            AstFragment::Expr(Rc::clone(binding)),
         ];
 
-        fragments.push(AstFragment::Stmt(stmt.get_then_branch()));
+        fragments.push(AstFragment::Stmt(Rc::clone(inner.then_branch())));
 
-        if let Some(else_branch) = stmt.get_else_branch() {
-            fragments.push(AstFragment::Stmt(else_branch));
+        if let Some(else_branch) = inner.else_branch() {
+            fragments.push(AstFragment::Stmt(Rc::clone(else_branch)));
         }
 
-        let tag = if stmt.get_else_branch().is_some() {
+        let tag = if inner.else_branch().is_some() {
             "if-else"
         } else {
             "if"
@@ -293,45 +334,53 @@ impl stmt::Visitor<String> for AstPrinter {
     }
 
     // My note: untested.
-    fn visit_print_stmt(&mut self, stmt: &stmt::Print) -> Result<String, LoxRuntimeError> {
+    fn visit_print_stmt(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
+        let print = unwrap_stmt!(stmt, Print);
+
         Ok(self.parenthesize2(
             "print",
             &[
-                AstFragment::Expr(&stmt.get_expression()),
+                AstFragment::Expr(Rc::clone(print.expression())),
             ],
         )?)
     }
 
     // My note: untested.
-    fn visit_return_stmt(&mut self, stmt: &stmt::Return) -> Result<String, LoxRuntimeError> {
-        if let Some(value) = stmt.get_value() {
-            Ok(self.parenthesize2("return", &[AstFragment::Expr(value)])?)
+    fn visit_return_stmt(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
+        let inner = unwrap_stmt!(stmt, Return);
+
+        if let Some(value) = inner.value() {
+            Ok(self.parenthesize2("return", &[AstFragment::Expr(value.clone())])?)
         } else {
             Ok("(return)".to_string())
         }
     }
 
     // My note: untested.
-    fn visit_var_stmt(&mut self, stmt: &stmt::Var) -> Result<String, LoxRuntimeError> {
+    fn visit_var_stmt(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
+        let var = unwrap_stmt!(stmt, Var);
+
         let mut fragments = vec![
-            AstFragment::Token(&stmt.get_name()),
+            AstFragment::Token(var.name()),
         ];
 
-        if let Some(initializer) = stmt.get_initializer() {
+        if let Some(initializer) = var.initializer() {
             fragments.push(AstFragment::Text("=".to_string()));
-            fragments.push(AstFragment::Expr(initializer));
+            fragments.push(AstFragment::Expr(Rc::clone(initializer)));
         }
 
         Ok(self.parenthesize2("var", &fragments)?)
     }
 
     // My note: untested.
-    fn visit_while_stmt(&mut self, stmt: &stmt::While) -> Result<String, LoxRuntimeError> {
+    fn visit_while_stmt(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
+        let inner = unwrap_stmt!(stmt, While);
+
         Ok(self.parenthesize2(
             "while",
             &[
-                AstFragment::Expr(&stmt.get_condition()),
-                AstFragment::Stmt(&stmt.get_body()),
+                AstFragment::Expr(Rc::clone(inner.condition())),
+                AstFragment::Stmt(inner.body().clone()),
             ],
         )?)
     }
@@ -339,6 +388,7 @@ impl stmt::Visitor<String> for AstPrinter {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
     use crate::token_type::TokenType;
     use crate::token::{LiteralValue, Token};
     use super::expr;
@@ -349,17 +399,17 @@ mod tests {
     // Please see the expression: (* (- 123) (group 45.67)), under:
     //     https://craftinginterpreters.com/representing-code.html#a-not-very-pretty-printer
     fn it_works() {
-        let expr = expr::Expr::Binary(Binary::new(
-            expr::Expr::Unary(Unary::new(
+        let expr = Rc::new(expr::Expr::Binary(Binary::new(
+            Rc::new(expr::Expr::Unary(Unary::new(
                 Token::new(TokenType::Minus, "-".to_string(), None, 1),
-                expr::Expr::Literal(Literal::new(LiteralValue::Number(123.0))),
-            )),
+                Rc::new(expr::Expr::Literal(Literal::new(LiteralValue::Number(123.0)))),
+            ))),
             Token::new(TokenType::Star, "*".to_string(), None, 1),
-            expr::Expr::Grouping(Grouping::new(
-                expr::Expr::Literal(Literal::new(LiteralValue::Number(45.67))),
-            )),
-        ));    
+            Rc::new(expr::Expr::Grouping(Grouping::new(
+                Rc::new(expr::Expr::Literal(Literal::new(LiteralValue::Number(45.67)))),
+            ))),
+        )));
 
-        assert_eq!("(* (- 123.0) (group 45.67))".to_string(), AstPrinter{}.print_expression(&expr).unwrap());
+        assert_eq!("(* (- 123.0) (group 45.67))".to_string(), AstPrinter{}.print_expression(expr).unwrap());
     }
 }
