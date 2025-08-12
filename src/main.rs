@@ -24,12 +24,16 @@ mod interpreter;
 mod lox_function;
 mod lox_return;
 mod lox_runtime_error;
+mod resolver;
 
 mod expr;
 mod stmt;
 
+use rlox::{unwrap_expr, unwrap_stmt};
+
 use scanner::Scanner;
 use interpreter::Interpreter;
+use resolver::Resolver;
 
 fn run(source: &str) -> Result<(), std::io::Error> {
     let mut scanner = Scanner::new(source);
@@ -42,9 +46,16 @@ fn run(source: &str) -> Result<(), std::io::Error> {
                     // Both are valid.
                     // let mut interpreter = Interpreter::new(Box::new(io::stdout()));
                     let mut interpreter = Interpreter::new(io::stdout());
-                    match interpreter.interpret(statements) {
-                        Err(err) => println!("Evaluation error: {}", err),
-                        Ok(_) => (),
+                    let mut resolver: Resolver = Resolver::new(&mut interpreter);
+
+                    match resolver.resolve(&statements) {
+                      Err(err) => println!("Resolve error: {}", err),
+                        Ok(_) => {
+                            match interpreter.interpret(&statements) {
+                                Err(err) => println!("Evaluation error: {}", err),
+                                Ok(_) => (),
+                            }
+                        }
                     }
                 },
             }
