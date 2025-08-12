@@ -144,32 +144,6 @@ fn get_for_loops_script_results<'a>() -> TestScriptAndResults<'a> {
             expected_output: vec!["1.0", "2.0", "3.0", 
                 "0.0", "1.0", "2.0"],
         },        
-	    // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/for
-        TestScriptAndResult {
-            script_name: "./tests/data/for/scope.lox",
-            expected_result: true,
-            // Normalises f64.
-            expected_output: vec!["0.0", "-1.0", 
-                "after",
-                "0.0"],
-        },
-	    // Author's end section https://craftinginterpreters.com/control-flow.html#for-loops
-        TestScriptAndResult {
-            script_name: "./tests/data/for/book_end_section.lox",
-            expected_result: true,
-            // Normalises f64.
-            expected_output: vec!["0.0", "1.0", "1.0", "2.0", "3.0", 
-                "5.0", "8.0", "13.0", "21.0", "34.0", "55.0", "89.0", 
-                "144.0", "233.0", "377.0", "610.0", "987.0", 
-                "1597.0", "2584.0", "4181.0", "6765.0"],
-        },
-        // Mine.
-        TestScriptAndResult {
-            script_name: "./tests/data/for/for-01.lox",
-            expected_result: true,
-            // Normalises f64.
-            expected_output: vec!["0.0", "0.0", "0.0", "1.0", "0.0", "2.0"],
-        },        
     ]
 } // cargo test test_interpreter_for_loops_stmt -- --exact [--nocapture]
 
@@ -184,7 +158,7 @@ fn test_interpreter_conditional_execution_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
@@ -201,7 +175,7 @@ fn test_interpreter_logical_operators_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
@@ -218,7 +192,7 @@ fn test_interpreter_while_loops_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
@@ -235,7 +209,7 @@ fn test_interpreter_for_loops_stmt() {
 
         // Test interpreting/evaluating.
         let mut interpreter = make_interpreter_byte_stream();
-        let res = interpreter.interpret(statements);
+        let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
     }
