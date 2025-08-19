@@ -1,0 +1,5 @@
+// From the end of section https://craftinginterpreters.com/classes.html#creating-instances
+
+class Bagel {}
+var bagel = Bagel();
+print bagel; // Prints "Bagel instance".
