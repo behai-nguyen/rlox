@@ -24,16 +24,19 @@ impl LoxError {
         LoxError{line, lexeme: lexeme.to_string(), err_msg: msg.to_string()}
     }
 
-    pub fn get_line(&self) -> usize {
+    #[allow(dead_code)]
+    pub fn line(&self) -> usize {
         self.line
     }
 
-    pub fn get_lexeme(&self) -> String {
-        self.lexeme.clone()
+    #[allow(dead_code)]
+    pub fn lexeme(&self) -> &str {
+        &self.lexeme
     }
 
-    pub fn get_err_msg(&self) -> String {
-        self.err_msg.clone()
+    #[allow(dead_code)]
+    pub fn err_msg(&self) -> &str {
+        &self.err_msg
     }
 }
 
@@ -49,16 +52,28 @@ impl fmt::Debug for LoxError {
 
 impl fmt::Display for LoxError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f,"[line {}] Error at '{}': {}", self.line, self.lexeme, self.err_msg)
+        if self.line > 0 {
+            write!(f,"[line {}] Error at '{}': {}", self.line, self.lexeme, self.err_msg)
+        } else {
+            if self.lexeme.len() > 0 {
+                write!(f,"Error at '{}': {}", self.lexeme, self.err_msg)
+            } else {
+                write!(f,"Error: {}", self.err_msg)
+            }
+        }
     }
 }
+
+// This allows `LoxError` to be used in standard error propagation chains 
+// (e.g., `Result<T, Box<dyn std::error::Error>>`).
+impl std::error::Error for LoxError {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
+    fn test_valid_error_message() {
         let err = LoxError::new(10, "idx", "this is a test error");
         assert_eq!("[line 10] Error at 'idx': this is a test error", err.to_string());
     }
