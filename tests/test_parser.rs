@@ -19,6 +19,9 @@
 //!     * cargo test test_parser_while_loops_stmt -- --exact [--nocapture]
 //!     * cargo test test_parser_for_loops_stmt -- --exact [--nocapture]
 //!     * cargo test test_parser_function_objects_stmt -- --exact [--nocapture]
+//!     * cargo test test_parser_classes_field_and_property -- --exact [--nocapture]
+//!     * cargo test test_parser_classes_methods_on_classes -- --exact [--nocapture]
+//!     * cargo test test_parser_classes_this -- --exact [--nocapture]
 //! 
 
 use std::rc::Rc;
@@ -242,6 +245,55 @@ fn get_function_objects_script_results<'a>() -> TestScriptAndResults<'a> {
     ]
 } // cargo test test_parser_function_objects_stmt -- --exact [--nocapture]
 
+// Scripts in this method test code up to section:
+// https://craftinginterpreters.com/classes.html#properties-on-instances
+fn get_classes_field_and_property_script_results<'a>() -> TestScriptAndResults<'a> {
+    vec![
+        // From author's https://github.com/munificent/craftinginterpreters/tree/master/test/number
+        TestScriptAndResult {
+            script_name: "./tests/data/number/decimal_point_at_eof.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at '': Expect property name after '.'."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/number/trailing_dot.lox",
+            expected_result: false,
+            expected_output: vec!["[line 2] Error at ';': Expect property name after '.'."],
+        },
+    ]
+} // cargo test test_parser_classes_field_and_property -- --exact [--nocapture]
+
+// Scripts in this method test code up to section:
+// https://craftinginterpreters.com/classes.html#methods-on-classes
+fn get_classes_methods_on_classes_script_results<'a>() -> TestScriptAndResults<'a> {
+    vec![
+        // From author's https://github.com/munificent/craftinginterpreters/tree/master/test/method
+        TestScriptAndResult {
+            script_name: "./tests/data/method/too_many_arguments.lox",
+            expected_result: false,
+            expected_output: vec!["[line 259] Error at 'a': Can't have more than 255 arguments."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/method/too_many_parameters.lox",
+            expected_result: false,
+            expected_output: vec!["[line 258] Error at 'a': Can't have more than 255 parameters."],
+        },
+    ]
+} // cargo test test_parser_classes_methods_on_classes -- --exact [--nocapture]
+
+// Scripts in this method test code up to section:
+// https://craftinginterpreters.com/classes.html#this
+fn get_classes_this_script_results<'a>() -> TestScriptAndResults<'a> {
+    vec![
+        // From author's https://github.com/munificent/craftinginterpreters/tree/master/test/assignment
+        TestScriptAndResult {
+            script_name: "./tests/data/assignment/to_this.lox",
+            expected_result: false,
+            expected_output: vec!["[line 3] Error at '=': Invalid assignment target."],
+        },
+    ]
+} // cargo test test_parser_classes_this -- --exact [--nocapture]
+
 #[test]
 // The test script is from 
 //     https://github.com/munificent/craftinginterpreters/blob/master/test/expressions/parse.lox
@@ -419,6 +471,60 @@ fn test_parser_function_objects_stmt() {
     let func_objs_script_results = get_function_objects_script_results();
 
     for entry in func_objs_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
+}
+
+#[test]
+// Scripts in this method test code up to section:
+// https://craftinginterpreters.com/classes.html#properties-on-instances
+fn test_parser_classes_field_and_property() {
+    let cls_fld_and_ppt_script_results = get_classes_field_and_property_script_results();
+
+    for entry in cls_fld_and_ppt_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
+}
+
+#[test]
+// Scripts in this method test code up to section:
+// https://craftinginterpreters.com/classes.html#methods-on-classes
+fn test_parser_classes_methods_on_classes() {
+    let cls_mth_on_cls_script_results = get_classes_methods_on_classes_script_results();
+
+    for entry in cls_mth_on_cls_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
+}
+
+#[test]
+// Scripts in this method test code up to section:
+// https://craftinginterpreters.com/classes.html#this
+fn test_parser_classes_this() {
+    let classes_this_script_results = get_classes_this_script_results();
+
+    for entry in classes_this_script_results {
         // Ensure script is loaded, scanned and parsed successfully.
         let tokens = assert_scan_script(entry.script_name);
 
