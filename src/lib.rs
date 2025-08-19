@@ -9,7 +9,7 @@ pub mod scanner_index;
 pub mod token_type;
 pub mod token;
 pub mod lox_callable;
-pub mod data_type;
+pub mod value;
 pub mod lox_clock;
 pub mod scanner;
 pub mod expr;
@@ -22,6 +22,8 @@ pub mod lox_function;
 pub mod lox_return;
 pub mod lox_runtime_error;
 pub mod resolver;
+pub mod lox_class;
+pub mod lox_instance;
 
 #[macro_export]
 macro_rules! unwrap_expr {
