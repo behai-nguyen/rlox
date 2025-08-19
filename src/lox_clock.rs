@@ -6,7 +6,7 @@
 //! [Native Functions](https://craftinginterpreters.com/functions.html#native-functions)
 //! section.
 
-use super::data_type::Value;
+use super::value::Value;
 use super::lox_runtime_error::LoxRuntimeError;
 use super::lox_callable::LoxCallable;
 use super::interpreter::Interpreter;
@@ -34,8 +34,10 @@ impl LoxCallable for LoxClock {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
+}
 
-    fn to_string(&self) -> String {
-        "<native fn>".to_string()
+impl std::fmt::Display for LoxClock {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<native fn>")
     }
 }
