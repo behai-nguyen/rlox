@@ -21,17 +21,15 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use super::lox_error::LoxError;
-use super::lox_error_helper::error; 
-use super::data_type::Value;
+use super::lox_error_helper::{sys_error, error}; 
+use super::value::{Value, ValueMap};
 use super::token::Token;
-
-type ValuesMap = HashMap<String, Value>;
 
 pub type EnvironmentRef = Rc<RefCell<Environment>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
-    values: ValuesMap,
+    values: ValueMap,
     enclosing: Option<EnvironmentRef>,
 }
 
@@ -54,6 +52,11 @@ impl Environment {
         }
     }
 
+    #[allow(dead_code)]
+    pub fn values(&self) -> &ValueMap {
+        &self.values
+    }
+
     pub fn get(&self, name: &Token) -> Result<Value, LoxError> {
         if let Some(token) = self.values.get(name.lexeme()) {
             Ok(token.clone())
@@ -64,6 +67,10 @@ impl Environment {
             Err(error(name, &format!("Undefined variable '{}'.", name.lexeme())))
         }
     }
+
+    fn get_by_name(&self, name: &str) -> Option<Value> {
+        self.values.get(name).cloned()
+    }    
 
     pub fn assign(&mut self, name: &Token, value: Value) -> Result<(), LoxError> {
         match self.values.get_mut(name.lexeme()) {
@@ -85,7 +92,9 @@ impl Environment {
         self.values.insert(name, value);
     }
 
-    fn ancestor(env: &EnvironmentRef, name: &Token, distance: usize) -> Result<EnvironmentRef, LoxError> {
+    // A duplicate version of ancestor() without Token. "Native" is as per in the 
+    // original Java version.
+    fn ancestor(env: &EnvironmentRef, distance: usize) -> Result<EnvironmentRef, LoxError> {
         let mut environment = Rc::clone(env);
 
         for _ in 0..distance {
@@ -94,29 +103,36 @@ impl Environment {
                 borrowed.enclosing.clone()
             };
 
-            environment = next.ok_or_else(|| error(name, "No enclosing environment found."))?;
+            // This is the only difference to ancestor().
+            environment = next.ok_or_else(|| sys_error("", "No enclosing environment found."))?;
         }
 
         Ok(environment)
     }
 
-    pub fn get_at(env: &EnvironmentRef, name: &Token, distance: usize) -> Result<Value, LoxError> {
-        Self::ancestor(env, name, distance)?.borrow().get(name)
+    // This is only for variables the resolver already checked.
+    // If it failed, it’d be a bug in the interpreter, not user code.
+    // There are no runtime errors at this point — only logic errors.
+    pub fn get_at(env: &EnvironmentRef, distance: usize, name: &str) -> Value {
+        Self::ancestor(env, distance).unwrap()
+            .borrow()
+            .get_by_name(name)
+            .expect("Resolver bug: variable not found at expected distance")
     }
 
     pub fn assign_at(env: &EnvironmentRef, distance: usize, 
         name: &Token, value: Value) -> Result<(), LoxError> {
-        Self::ancestor(env, name, distance)?.borrow_mut().values.insert(
+        Self::ancestor(env, distance)?.borrow_mut().values.insert(
             name.lexeme().to_string(), value);
         Ok(())
-    }
+    }    
 }
 
 #[cfg(test)]
 mod tests {
     use std::rc::Rc;
     use std::cell::RefCell;
-    use crate::data_type::Value;
+    use crate::value::Value;
     use crate::environment::Environment;
     use crate::token_type::TokenType;
     use crate::token::Token;
