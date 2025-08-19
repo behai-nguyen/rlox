@@ -11,7 +11,7 @@
 
 use std::fmt;
 
-use super::data_type::Value;
+use super::value::Value;
 
 #[derive(Debug)]
 pub struct LoxReturn {
@@ -19,6 +19,7 @@ pub struct LoxReturn {
 }
 
 impl LoxReturn {
+    #[allow(dead_code)]
     pub fn new(value: Value) -> Self {
         LoxReturn { value }
     }
