@@ -9,4 +9,4 @@ Scripts are from
 
 - `at_top_level.lox`: Used in [tests/test_resolving_and_binding.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_resolving_and_binding.rs)
 
-- `in_method.lox`: Not in use yet.
+- `in_method.lox`: Used in [tests/test_classes.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_classes.rs)

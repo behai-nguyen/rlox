@@ -17,4 +17,4 @@ Scripts are from
 
 - `in_middle_of_block.lox`, `in_nested_block.lox`, `scope_reuse_in_different_blocks.lox`, `shadow_and_local.lox`, `shadow_global.lox`, and `shadow_local.lox`: Used in [tests/test_resolving_and_binding.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_resolving_and_binding.rs)
 
-- **The rest**: Are not used yet.
+- `local_from_method.lox`: Used in [tests/test_classes.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_classes.rs)

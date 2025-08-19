@@ -11,4 +11,4 @@ Scripts are from
 
 - `assign_to_closure.lox`, `closed_closure_in_function.lox`, `close_over_function_parameter.lox`, `close_over_later_variable.lox`, `nested_closure.lox`, `open_closure_in_function.lox`, `reference_closure_multiple_times.lox`, `reuse_closure_slot.lox`, `shadow_closure_with_local.lox`, `unused_later_closure.lox`, **`unused_closure.lox`** (it is used in two modules), `assign_to_shadowed_later.lox`, and `book_fun_in_closure.lox`: Used in [tests/test_resolving_and_binding.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_resolving_and_binding.rs)
 
-- **The rest**: Are not yet used.
+- `close_over_method_parameter.lox`: Used in [tests/test_classes.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_classes.rs)
