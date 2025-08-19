@@ -8,12 +8,14 @@ use std::process;
 use std::fs::read_to_string;
 use std::io::{self, Write};
 
+mod expr;
+mod stmt;
 mod lox_error;
 mod lox_error_helper;
 mod scanner_index;
 mod token_type;
 mod token;
-mod data_type;
+mod value;
 mod lox_callable;
 mod lox_clock;
 mod scanner;
@@ -25,9 +27,8 @@ mod lox_function;
 mod lox_return;
 mod lox_runtime_error;
 mod resolver;
-
-mod expr;
-mod stmt;
+mod lox_class;
+mod lox_instance;
 
 use rlox::{unwrap_expr, unwrap_stmt};
 
