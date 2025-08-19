@@ -92,7 +92,7 @@ fn test_interpreter_02_binary_greater() {
     // Interpreting/evaluating was result in an error.
     assert_eq!(res.is_err(), true, "3");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "3");
+    assert_eq!("Operand must be a number.", err.err_msg(), "3");
 }
 
 #[test]
@@ -122,7 +122,7 @@ fn test_interpreter_03_binary_greater_equal() {
     // Interpreting/evaluating was result in an error.
     assert_eq!(res.is_err(), true, "3");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "3");
+    assert_eq!("Operand must be a number.", err.err_msg(), "3");
 }
 
 #[test]
@@ -152,7 +152,7 @@ fn test_interpreter_04_binary_less()  {
     // Interpreting/evaluating was result in an error.
     assert_eq!(res.is_err(), true, "3");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "3");
+    assert_eq!("Operand must be a number.", err.err_msg(), "3");
 }
 
 #[test]
@@ -182,7 +182,7 @@ fn test_interpreter_05_binary_less_equal()  {
     // Interpreting/evaluating was result in an error.
     assert_eq!(res.is_err(), true, "3");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "3");
+    assert_eq!("Operand must be a number.", err.err_msg(), "3");
 }
 
 #[test]
@@ -330,7 +330,7 @@ fn test_interpreter_08_binary_minus()  {
     // Interpreting/evaluating was result in an error.
     assert_eq!(res.is_err(), true, "3");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "3");
+    assert_eq!("Operand must be a number.", err.err_msg(), "3");
 
     // Test 4.
     let expr = assert_parse_line_expression("\"abc\" - \"xyz\"");
@@ -339,7 +339,7 @@ fn test_interpreter_08_binary_minus()  {
     // Interpreting/evaluating was result in an error.
     assert_eq!(res.is_err(), true, "4");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "4");
+    assert_eq!("Operand must be a number.", err.err_msg(), "4");
 }
 
 #[test]
@@ -369,7 +369,7 @@ fn test_interpreter_09_binary_plus()  {
     // Interpreting/evaluating was successful.
     assert_eq!(res.is_err(), true, "3");
     let err = res.unwrap_err();
-    assert_eq!("Operands must be two numbers or two strings.", err.get_err_msg(), "3");
+    assert_eq!("Operands must be two numbers or two strings.", err.err_msg(), "3");
 
     // Test 4.
     let expr = assert_parse_line_expression("\"abc \" + \"def\"");
@@ -386,7 +386,7 @@ fn test_interpreter_09_binary_plus()  {
     // Interpreting/evaluating was successful.
     assert_eq!(res.is_err(), true, "5");
     let err = res.unwrap_err();
-    assert_eq!("Operands must be two numbers or two strings.", err.get_err_msg(), "5");
+    assert_eq!("Operands must be two numbers or two strings.", err.err_msg(), "5");
 }
 
 #[test]
@@ -416,7 +416,7 @@ fn test_interpreter_10_binary_slash()  {
     // Interpreting/evaluating was successful.
     assert_eq!(res.is_err(), true, "3");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "3");
+    assert_eq!("Operand must be a number.", err.err_msg(), "3");
 }
 
 #[test]
@@ -446,7 +446,7 @@ fn test_interpreter_11_binary_star()  {
     // Interpreting/evaluating was result in an error.
     assert_eq!(res.is_err(), true, "3");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "3");
+    assert_eq!("Operand must be a number.", err.err_msg(), "3");
 
     // Test 4.
     let expr = assert_parse_line_expression("true * 3");
@@ -455,7 +455,7 @@ fn test_interpreter_11_binary_star()  {
     // Interpreting/evaluating was result in an error.
     assert_eq!(res.is_err(), true, "4");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "4");
+    assert_eq!("Operand must be a number.", err.err_msg(), "4");
 }
 
 #[test]
@@ -575,7 +575,7 @@ fn test_interpreter_14_unary_minus() {
     // Interpreting/evaluating was successful.
     assert_eq!(res.is_err(), true, "4");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "4");
+    assert_eq!("Operand must be a number.", err.err_msg(), "4");
 
     // Test 5.
     let expr = assert_parse_line_expression("-\"abc\"");
@@ -584,7 +584,7 @@ fn test_interpreter_14_unary_minus() {
     // Interpreting/evaluating was successful.
     assert_eq!(res.is_err(), true, "5");
     let err = res.unwrap_err();
-    assert_eq!("Operand must be a number.", err.get_err_msg(), "5");
+    assert_eq!("Operand must be a number.", err.err_msg(), "5");
 }
 
 fn get_expression_script_results<'a>() -> TestScriptAndResults<'a> {
