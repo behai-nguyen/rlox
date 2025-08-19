@@ -7,4 +7,4 @@ Scripts are from
 
 - `bool.lox`, `nil.lox`, `num.lox`, and `string.lox`: Used in [tests/test_functions.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_functions.rs)
 
-- `object.lox`: Not used yet.
+- `object.lox`: Used in [tests/test_classes.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_classes.rs)

@@ -13,4 +13,4 @@ Scripts are from
 
 - `not.lox`: Used in [tests/test_functions.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_functions.rs)
 
-- `equals_class.lox`, `equals_method.lox`, `not.lox`, and `not_class.lox`: Are not yet used.
+- `equals_class.lox`, `not_class.lox`, and `equals_method.lox`: Used in [tests/test_classes.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_classes.rs)
