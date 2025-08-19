@@ -19,12 +19,21 @@ use super::token::Token;
 enum FunctionType {
     Nil,
     Function,
+    Initializer,
+    Method,
+}
+
+#[derive(Copy, Clone, PartialEq)]
+enum ClassType {
+    None,
+    Class,
 }
 
 pub struct Resolver<'a> {
     interpreter: &'a mut Interpreter, 
     scopes: Vec<HashMap<String, bool>>,
     current_function: FunctionType,
+    current_class: ClassType,
 }
 
 impl<'a> Resolver<'a> {
@@ -33,6 +42,7 @@ impl<'a> Resolver<'a> {
             interpreter,
             scopes: Vec::new(),
             current_function: FunctionType::Nil,
+            current_class: ClassType::None,
         }
     }
 
@@ -136,8 +146,10 @@ impl<'a> expr::Visitor<()> for Resolver<'a> {
         Ok(())
     }
 
-    fn visit_get_expr(&mut self, _: Rc<Expr>) -> Result<(), LoxRuntimeError> {
-        unimplemented!()
+    fn visit_get_expr(&mut self, expr: Rc<Expr>) -> Result<(), LoxRuntimeError> {
+        let get = unwrap_expr!(expr, Get);
+        self.resolve_expression(Rc::clone(get.object()))?;
+        Ok(())
     }
 
     fn visit_grouping_expr(&mut self, expr: Rc<Expr>) -> Result<(), LoxRuntimeError> {
@@ -159,16 +171,32 @@ impl<'a> expr::Visitor<()> for Resolver<'a> {
         Ok(())
     }
 
-    fn visit_set_expr(&mut self, _: Rc<Expr>) -> Result<(), LoxRuntimeError> {
-        unimplemented!()
+    fn visit_set_expr(&mut self, expr: Rc<Expr>) -> Result<(), LoxRuntimeError> {
+        let set = unwrap_expr!(expr, Set);
+
+        self.resolve_expression(Rc::clone(set.value()))?;
+        self.resolve_expression(Rc::clone(set.object()))?;
+
+        Ok(())
     }
 
     fn visit_super_expr(&mut self, _: Rc<Expr>) -> Result<(), LoxRuntimeError> {
         unimplemented!()
     }
 
-    fn visit_this_expr(&mut self, _: Rc<Expr>) -> Result<(), LoxRuntimeError> {
-        unimplemented!()
+    fn visit_this_expr(&mut self, expr: Rc<Expr>) -> Result<(), LoxRuntimeError> {
+        let binding = expr.clone();
+        let this = unwrap_expr!(binding, This);
+
+        if self.current_class == ClassType::None {
+            return Err(LoxRuntimeError::Error(
+                error(this.keyword(), "Can't use 'this' outside of a class."))
+            );
+        }
+
+        self.resolve_local(expr, this.keyword());
+
+        Ok(())
     }
 
     fn visit_unary_expr(&mut self, expr: Rc<Expr>) -> Result<(), LoxRuntimeError> {
@@ -205,8 +233,37 @@ impl<'a> stmt::Visitor<()> for Resolver<'a> {
         res
     }
 
-    fn visit_class_stmt(&mut self, _: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
-        unimplemented!()
+    fn visit_class_stmt(&mut self, stmt: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
+        let class = unwrap_stmt!(stmt, Class);
+
+        let enclosing_class: ClassType = self.current_class;
+        self.current_class = ClassType::Class;
+
+        self.declare(class.name())?;
+        self.define(class.name());
+
+        self.begin_scope();
+        if let Some(scope) = self.scopes.last_mut() {
+            scope.insert("this".to_string(), true);
+        }
+
+        for method in class.methods() {
+            let mut declaration: FunctionType = FunctionType::Method;
+
+            // We use the visited method’s name to determine if we’re resolving 
+            // an initializer or not.
+            if method.name().lexeme() == "init" {                
+                declaration =  FunctionType::Initializer;
+            }
+
+            self.resolve_function(method, declaration)?;
+        }
+
+        self.end_scope();
+
+        self.current_class = enclosing_class;
+
+        Ok(())
     }
 
     fn visit_expression_stmt(&mut self, stmt: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
@@ -254,6 +311,11 @@ impl<'a> stmt::Visitor<()> for Resolver<'a> {
         }
 
         if let Some(expr) = inner.value() {
+            if self.current_function == FunctionType::Initializer {
+                return Err(LoxRuntimeError::Error(
+                    error(inner.keyword(), "Can't return a value from an initializer."))
+                );
+            }
             self.resolve_expression(Rc::clone(expr))?;
         };
 
