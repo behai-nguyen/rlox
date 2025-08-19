@@ -41,6 +41,14 @@ For a complete documentation, please see the author original [The Lox Language](
     - [Example 2](#example-2-5)
     - [Example 3: Scope Resolution](#example-3-scope-resolution)
     - [Example 4: Invalid Variable Initialisation](#example-4-invalid-variable-initialisation)
+* [Classes](#classes)
+    - [Example 1](#example-1-6)
+    - [Example 2](#example-2-6)
+    - [Examples Using `this`](#examples-using-this)
+        * [Example 3a](#example-3a)
+        * [Example 3b](#example-3b)
+        * [Example 3c](#example-3c)
+    - [Example 4](#example-4-1)
 
 ## Data Types
 
@@ -489,6 +497,117 @@ It raises the following resolution error:
 
 ```
 Error: [line 3] Error at 'a': Can't read local variable in its own initializer.
+```
+
+## Classes
+
+The examples below demonstrate basic class features. For more examples, refer to the following author-provided test script directories on GitHub:
+
+- [master/test/class](https://github.com/munificent/craftinginterpreters/tree/master/test/class)
+- [master/test/field](https://github.com/munificent/craftinginterpreters/tree/master/test/field)
+- [master/test/method](https://github.com/munificent/craftinginterpreters/tree/master/test/method)
+- [master/test/constructor](https://github.com/munificent/craftinginterpreters/tree/master/test/constructor)
+
+### Example 1
+
+This example demonstrates class instantiation and class identity.
+
+Taken from the end of the section [Chapter 12 | Creating Instances](https://craftinginterpreters.com/classes.html#creating-instances):
+
+```lox
+class Bagel {}
+var bagel = Bagel();
+print bagel; // Prints "Bagel instance".
+print Bagel; // Prints "Bagel".
+```
+
+### Example 2
+
+This example demonstrates methods defined on classes.
+
+Taken from the end of the section [Chapter 12 | Methods on Classes](https://craftinginterpreters.com/classes.html#methods-on-classes):
+
+```
+class Bacon {
+  eat() {
+    print "Crunch crunch crunch!";
+  }
+}
+
+Bacon().eat(); // Prints "Crunch crunch crunch!".
+
+var bacon = Bacon();
+bacon.eat(); // Prints "Crunch crunch crunch!".
+```
+
+### Examples Using `this`
+
+The following examples are from the section [Chapter 12 | Methods on Classes](https://craftinginterpreters.com/classes.html#this).
+
+#### Example 3a
+
+```lox
+class Egotist {
+  speak() {
+    print this;
+  }
+}
+
+var method = Egotist().speak;
+method(); // Prints "Egotist instance".
+```
+
+#### Example 3b
+
+```lox
+class Cake {
+  taste() {
+    var adjective = "delicious";
+    print "The " + this.flavor + " cake is " + adjective + "!";
+  }
+}
+
+var cake = Cake();
+cake.flavor = "German chocolate";
+cake.taste(); // Prints "The German chocolate cake is delicious!".
+```
+
+#### Example 3c
+
+```lox
+class Thing {
+  getCallback() {
+    fun localFunction() {
+      print this;
+    }
+
+    return localFunction;
+  }
+}
+
+var callback = Thing().getCallback();
+callback(); // Prints "Thing instance".
+```
+
+### Example 4
+
+This example demonstrates constructors (`init()`) and initializers.
+
+Taken from the end of the section [Chapter 12 | Constructors and Initializers](https://craftinginterpreters.com/classes.html#constructors-and-initializers):
+
+```lox
+class Foo {
+  init() {
+    this.name = "behai";
+  }
+
+  hello() {
+    print "Hello " + this.name + ". How are you?";
+  }
+}
+
+var foo = Foo();
+foo.hello();
 ```
 
 > This guide will expand as more of the Lox language is implemented—including statements, functions, and classes.
