@@ -15,7 +15,7 @@ use super::lox_error::LoxError;
 use super::lox_runtime_error::LoxRuntimeError;
 use super::lox_error_helper::error; 
 use super::token::{LiteralValue, Token};
-use super::data_type::Value;
+use super::value::Value;
 use super::{expr, expr::Expr};
 use super::{stmt, stmt::Stmt};
 use super::{unwrap_expr, unwrap_stmt};
@@ -25,6 +25,9 @@ use super::lox_clock::LoxClock;
 use super::lox_function::LoxFunction;
 use super::lox_return::LoxReturn;
 
+use super::lox_class::{LoxClass, LoxFunctionsMap};
+use super::lox_instance::LoxInstance;
+
 // Remove generic from Interpreter to enable src/lox_function.rs' 
 // LoxFunction::call() to write the Interpreter::output.
 //
@@ -33,7 +36,7 @@ use super::lox_return::LoxReturn;
 //
 // ➜ LoxFunction implements LoxCallable.
 //
-// To enable working with Box<dyn LoxCallable>: work around the trait object 
+// To enable working with Rc<dyn LoxCallable>: work around the trait object 
 // constraints: object safety.
 //
 // For testing, we still need tests to write to byte streams. Writable is a type
@@ -48,6 +51,8 @@ use super::lox_return::LoxReturn;
 //     }
 // 
 pub trait Writable: std::io::Write {
+    #[allow(dead_code)]
+    // Used in tests. Rust does not see it since test modules are not in
     fn as_any(&self) -> &dyn Any;
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
@@ -76,7 +81,7 @@ impl Interpreter {
     fn initialize_globals(globals: &EnvironmentRef) {
         globals.borrow_mut().define(
             "clock".to_string(),
-            Value::LoxCallable(Box::new(LoxClock)),
+            Value::LoxCallable(Rc::new(LoxClock)),
         );
     }
 
@@ -142,7 +147,7 @@ impl Interpreter {
     fn look_up_variable(&self, name: &Token, expr: Rc<Expr>) -> Result<Value, LoxError> {
         // Pointer identity, using pointer address: &Rc::as_ptr(&expr).
         if let Some(&distance) = self.locals.get(&Rc::as_ptr(&expr)) {
-            Environment::get_at(&self.environment, name, distance)
+            Ok(Environment::get_at(&self.environment, distance, name.lexeme()))
         } else {             
             self.globals.borrow().get(name)
         }
@@ -172,6 +177,7 @@ impl Interpreter {
             Value::Boolean(b) => *b,
             Value::Nil => false,
             Value::LoxCallable(_) => true,
+            Value::LoxInstance(_) => true,
         }
     }
 
@@ -214,6 +220,7 @@ impl Interpreter {
             Value::Boolean(b) => b.to_string(),            
             Value::Nil => "nil".to_string(),
             Value::LoxCallable(callable) => callable.to_string(),
+            Value::LoxInstance(instance) => format!("{}", instance.borrow().to_string()),
         }
     }
 
@@ -311,7 +318,7 @@ impl expr::Visitor<Value> for Interpreter {
         let call = unwrap_expr!(expr, Call);
 
         let callee: Value = self.evaluate(Rc::clone(call.callee()))?;
-
+        
         let arguments: Vec<Value> = call.arguments()
             .iter()
             .map(|arg| self.evaluate(Rc::clone(arg)))
@@ -332,8 +339,15 @@ impl expr::Visitor<Value> for Interpreter {
         }        
     }
 
-    fn visit_get_expr(&mut self, _: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
-        unimplemented!()
+    fn visit_get_expr(&mut self, expr: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
+        let get = unwrap_expr!(expr, Get);
+        let object = self.evaluate(Rc::clone(get.object()))?;
+
+        match object {
+            Value::LoxInstance(instance) => 
+                Ok(LoxInstance::get(Rc::clone(&instance), get.name())?),
+            _ => Err(LoxRuntimeError::Error(error(get.name(), "Only instances have properties."))),
+        }
     }
 
     fn visit_grouping_expr(&mut self, expr: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
@@ -364,16 +378,31 @@ impl expr::Visitor<Value> for Interpreter {
         }
     }
 
-    fn visit_set_expr(&mut self, _: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
-        unimplemented!()
+    fn visit_set_expr(&mut self, expr: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
+        let set = unwrap_expr!(expr, Set);
+
+        let object = self.evaluate(Rc::clone(set.object()))?;
+
+        match object {
+            Value::LoxInstance(inst) => {
+                let value = self.evaluate(Rc::clone(set.value()))?;
+                inst.borrow_mut().set(set.name(), value.clone());
+                Ok(value)
+            },
+            _ => Err(LoxRuntimeError::Error(
+                    error(set.name(), "Only instances have fields.")))
+        }
     }
 
     fn visit_super_expr(&mut self, _: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
         unimplemented!()
     }
 
-    fn visit_this_expr(&mut self, _: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
-        unimplemented!()
+    fn visit_this_expr(&mut self, expr: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
+        let binding = expr.clone();
+        let this = unwrap_expr!(binding, This);
+
+        Ok(self.look_up_variable(this.keyword(), expr)?)
     }
 
     fn visit_unary_expr(&mut self, expr: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
@@ -412,8 +441,24 @@ impl stmt::Visitor<()> for Interpreter {
         Ok(())
     }
 
-    fn visit_class_stmt(&mut self, _: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
-        unimplemented!()
+    fn visit_class_stmt(&mut self, stmt: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
+        let class = unwrap_stmt!(stmt, Class);
+
+        self.environment.borrow_mut().define(class.name().lexeme().to_string(), Value::Nil); 
+
+        let mut methods: LoxFunctionsMap = HashMap::new();
+        for method in class.methods() {
+            let function: LoxFunction = LoxFunction::new(method.as_ref().clone(), 
+                self.environment.clone(), method.name().lexeme() == "init");
+            methods.insert(method.name().lexeme().to_string(), function);
+        }
+
+        let klass: LoxClass = LoxClass::new(class.name().lexeme().to_string(), methods);
+        self.environment.borrow_mut().assign(
+            class.name(),
+            Value::LoxCallable(Rc::new(klass))
+        )?;        
+        Ok(())
     }
 
     fn visit_expression_stmt(&mut self, stmt: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
@@ -426,10 +471,10 @@ impl stmt::Visitor<()> for Interpreter {
     fn visit_function_stmt(&mut self, stmt: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
         let inner = unwrap_stmt!(stmt, Function);
 
-        let function: LoxFunction = LoxFunction::new(inner.clone(), Rc::clone(&self.environment));
+        let function: LoxFunction = LoxFunction::new(inner.clone(), Rc::clone(&self.environment), false);
         self.environment.borrow_mut().define(
             inner.name().lexeme().to_string(), 
-            Value::LoxCallable(Box::new(function))
+            Value::LoxCallable(Rc::new(function))
         );
         Ok(())
     }
@@ -474,15 +519,13 @@ impl stmt::Visitor<()> for Interpreter {
 
     fn visit_var_stmt(&mut self, stmt: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
         let var = unwrap_stmt!(stmt, Var);
-
-        let mut value: Value = Value::Nil;
-
-        if let Some(expr) = var.initializer() {
-            value = self.evaluate(Rc::clone(expr))?;
-        }        
+        let value = if let Some(initializer) = var.initializer() {
+            self.evaluate(Rc::clone(initializer))?
+        } else {
+            Value::Nil
+        };
 
         self.environment.borrow_mut().define(var.name().lexeme().to_string(), value);
-
         Ok(())
     }
 
