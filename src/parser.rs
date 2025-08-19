@@ -18,6 +18,7 @@ use super::token::{LiteralValue, LiteralValue::*, Token};
 use super::lox_error_helper::error; 
 use super::expr::*;
 use super::stmt::*;
+use super::unwrap_stmt;
 
 pub struct Parser<'a> {
     tokens: &'a Vec<Token>,
@@ -107,6 +108,10 @@ impl<'a> Parser<'a> {
             return Err(error(self.previous(), "Expected a number value"));
         }
 
+        if self.match_token(&[TokenType::This]) {
+            return Ok(Rc::new(Expr::This(This::new(self.previous().clone()))))
+        }        
+
         if self.match_token(&[TokenType::Identifier]) {
             return Ok(Rc::new(Expr::Variable(Variable::new(self.previous().clone()))))
         }
@@ -154,8 +159,15 @@ impl<'a> Parser<'a> {
     fn call(&mut self) -> Result<Rc<Expr>, LoxError> {
         let mut expr: Rc<Expr> = self.primary()?;
 
-        while self.match_token(&[TokenType::LeftParen]) {
-            expr = self.finish_call(expr)?;
+        loop {
+            if self.match_token(&[TokenType::LeftParen]) {
+                expr = self.finish_call(expr)?;
+            } else if self.match_token(&[TokenType::Dot]) {
+                let name = self.consume(&TokenType::Identifier, "Expect property name after '.'.")?.clone();
+                expr = Rc::new(Expr::Get(Get::new(expr, name)));
+            } else {
+                break;
+            }
         }
 
         Ok(expr)
@@ -240,7 +252,9 @@ impl<'a> Parser<'a> {
     }
 
     fn declaration(&mut self) -> Result<Rc<Stmt>, LoxError> {
-        let result = if self.match_token(&[TokenType::Fun]) {
+        let result = if self.match_token(&[TokenType::Class]) {
+            self.class_declaration()
+        } else if self.match_token(&[TokenType::Fun]) {
             self.function("function")
         } else if self.match_token(&[TokenType::Var]) {
             self.var_declaration()
@@ -255,7 +269,7 @@ impl<'a> Parser<'a> {
                 Err(err)
             }
         }
-    }    
+    }
     
     fn synchronize(&mut self) {
         self.advance();
@@ -417,6 +431,24 @@ impl<'a> Parser<'a> {
         Ok(Rc::new(Stmt::Function(Function::new(name, parameters, body))))
     }
 
+    fn class_declaration(&mut self) -> Result<Rc<Stmt>, LoxError> {
+        let name: Token = self.consume(&TokenType::Identifier, "Expect class name.")?.clone();
+        self.consume(&TokenType::LeftBrace, "Expect '{' before class body.")?;
+
+        let mut methods: Vec<Rc<Function>> = vec![];
+
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            let binding = self.function("method")?;
+            let func = unwrap_stmt!(binding, Function);
+            methods.push(Rc::new(func.clone()));
+        }
+
+        self.consume(&TokenType::RightBrace, "Expect '}' after class body.")?;
+
+        // Stmt::Class is already ahead: it includes the `superclass` field already.
+        Ok(Rc::new(Stmt::Class(Class::new(name, None, methods))))
+    }
+
     // The author's note:
     //     Having block() return the raw list of statements and leaving it to 
     //     statement() to wrap the list in a Stmt.Block looks a little odd. I did 
@@ -445,12 +477,17 @@ impl<'a> Parser<'a> {
             let value: Rc<Expr> = self.assignment()?;
 
             match expr.as_ref() {
-                Expr::Variable(var) => return Ok(Rc::new(Expr::Assign(Assign::new(var.name().clone(), value)))),
+                Expr::Variable(var) => 
+                    return Ok(Rc::new(Expr::Assign(Assign::new(var.name().clone(), value)))),
+                Expr::Get(get) =>
+                    return Ok(Rc::new(Expr::Set(Set::new(
+                        Rc::clone(get.object()), get.name().clone(), value)))
+                    ),
                 _ => return Err(error(&equals, "Invalid assignment target."))
             }
         }
 
-        Ok(expr)
+        Ok(expr)        
     }
 
     fn statement(&mut self) -> Result<Rc<Stmt>, LoxError> {
