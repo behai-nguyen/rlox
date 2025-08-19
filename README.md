@@ -40,7 +40,7 @@ To exit, simply press ``Enter`` without entering anything.
 -->
 
 ```
-$ cargo run --release ./tests/data/for/book_end_section.lox
+$ cargo run --release ./tests/data/constructor/call_init_explicitly.lox
 ```
 
 If there are no errors, you will see the <!-- parser and the evaluation (interpreter) --> results printed out.
@@ -122,6 +122,16 @@ git clone -b v0.5.1 https://github.com/behai-nguyen/rlox.git
 ```
 
 This post covers Chapter 11 of <a href="https://craftinginterpreters.com/resolving-and-binding.html" title="Resolving and Binding" target="_blank">Crafting Interpreters</a>: <strong>Resolving and Binding</strong>. No new syntax elements are introduced in this chapter. Instead, Chapter 11 serves as a kind of patch to Chapter 10: it ensures that variables are resolved within their correct <code>closures</code>. The code for this chapter is relatively straightforward, but I made a mistake that introduced a subtle bug—one that took me a long time to diagnose and finally fix.
+
+9. [rlox: A Rust Implementation of “Crafting Interpreters” – Classes](https://behainguyen.wordpress.com/2025/08/19/rlox-a-rust-implementation-of-crafting-interpreters-classes/)
+
+The code version for the above post has been tagged with **v0.6.0**. It can be cloned with:
+  
+```
+git clone -b v0.6.0 https://github.com/behai-nguyen/rlox.git
+```
+
+This post covers Chapter 12 of <a href="https://craftinginterpreters.com/classes.html" title="Classes" target="_blank">Crafting Interpreters</a>: <strong>Classes</strong>. The following new syntax elements have been implemented: <code>Stmt::Class</code>, <code>Expr::Get</code>, <code>Expr::Set</code>, and <code>Expr::This</code>. Lox now supports <code>class</code>, <code>this</code>, and <code>init</code>. While implementing this chapter, I encountered two stack overflow bugs and several cases where author-provided test scripts produced incorrect results. This post discusses those issues in detail.
 
 ## License
 [MIT license](http://www.opensource.org/licenses/mit-license.php)
