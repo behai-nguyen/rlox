@@ -19,3 +19,5 @@ This directory contains test modules written after implementing specific section
 7. [tests/test_resolving_and_binding.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_resolving_and_binding.rs) — [Chapter 11: Resolving and Binding](https://craftinginterpreters.com/resolving-and-binding.html)
 
 8. [tests/test_classes.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_classes.rs) — [Chapter 12: Classes](https://craftinginterpreters.com/classes.html)
+
+9. [tests/test_inheritance.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_inheritance.rs) — [Chapter 13: Inheritance](https://craftinginterpreters.com/inheritance.html)
