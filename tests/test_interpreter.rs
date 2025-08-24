@@ -30,6 +30,7 @@
 //!     * cargo test test_interpreter_14_unary_minus -- --exact [--nocapture]
 //! 
 //!     * cargo test test_interpreter_expr -- --exact [--nocapture]
+//!     * cargo test test_interpreter_precedence -- --exact [--nocapture]
 //! 
 
 mod test_common;
@@ -716,11 +717,45 @@ fn get_expression_script_results<'a>() -> TestScriptAndResults<'a> {
     ]
 } // cargo test test_interpreter_expr -- --exact [--nocapture]
 
+fn get_precedence_script_results<'a>() -> TestScriptAndResults<'a> {
+    vec![
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/
+        //
+        // I have missed these root master/test/ author-provided scripts till after 
+        // completing Chapter 13.
+        TestScriptAndResult {
+            script_name: "./tests/data/precedence.lox",
+            expected_result: true,
+            // Normalise f64.
+            expected_output: vec!["14.0", "8.0", "4.0", "0.0", 
+                "true", "true", "true", "true", 
+                "0.0", "0.0", "0.0", "0.0", "4.0"],
+        },
+    ]
+} // cargo test test_interpreter_precedence -- --exact [--nocapture]
+
 #[test]
 fn test_interpreter_expr() {
     let expression_script_results = get_expression_script_results();
 
     for entry in expression_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let statements = assert_parse_script_statements(entry.script_name);
+
+        // Test interpreting/evaluating.
+        let mut interpreter = make_interpreter_byte_stream();
+        let res = interpreter.interpret(&statements);
+
+        // assert_interpreter_expression_result(&entry, &res);
+        assert_interpreter_result(&entry, &res, &interpreter);
+    }    
+}
+
+#[test]
+fn test_interpreter_precedence() {
+    let precedence_script_results = get_precedence_script_results();
+
+    for entry in precedence_script_results {
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
