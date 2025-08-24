@@ -49,6 +49,7 @@ For a complete documentation, please see the author original [The Lox Language](
         * [Example 3b](#example-3b)
         * [Example 3c](#example-3c)
     - [Example 4](#example-4-1)
+    - [Inheritance Example](#inheritance-example)
 
 ## Data Types
 
@@ -610,4 +611,30 @@ var foo = Foo();
 foo.hello();
 ```
 
-> This guide will expand as more of the Lox language is implemented—including statements, functions, and classes.
+### Inheritance Example
+
+This example demonstrates class inheritance and how the `super` keyword is used.
+
+Taken from the start of the section [Chapter 13 | Calling Superclass Methods](https://craftinginterpreters.com/inheritance.html#calling-superclass-methods):
+
+```lox
+class Doughnut {
+  cook() {
+    print "Fry until golden brown.";
+  }
+}
+
+class BostonCream < Doughnut {
+  cook() {
+    super.cook();
+    print "Pipe full of custard and coat with chocolate.";
+  }
+}
+
+BostonCream().cook();
+```
+
+For more examples, refer to the following author-provided test script directories on GitHub:
+
+- [master/test/inheritance](https://github.com/munificent/craftinginterpreters/tree/master/test/inheritance)
+- [master/test/benchmark](https://github.com/munificent/craftinginterpreters/tree/master/test/benchmark)
