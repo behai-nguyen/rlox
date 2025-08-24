@@ -10,4 +10,4 @@ Scripts is from
 
 - `40.lox`: Used in [tests/test_resolving_and_binding.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_resolving_and_binding.rs)
 
-- `394.lox`: Not used yet.
+- `394.lox`: Used in [tests/test_inheritance.rs](https://github.com/behai-nguyen/rlox/blob/main/tests/test_inheritance.rs)
