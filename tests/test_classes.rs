@@ -318,12 +318,12 @@ fn get_class_invalid_uses_of_this_script_results<'a>() -> TestScriptAndResults<'
         TestScriptAndResult {
             script_name: "./tests/data/this/this_at_top_level.lox",
             expected_result: false,
-            expected_output: vec!["Error: [line 1] Error at 'this': Can't use 'this' outside of a class."],
+            expected_output: vec!["[line 1] Error at 'this': Can't use 'this' outside of a class."],
         },
         TestScriptAndResult {
             script_name: "./tests/data/this/this_in_top_level_function.lox",
             expected_result: false,
-            expected_output: vec!["Error: [line 2] Error at 'this': Can't use 'this' outside of a class."],
+            expected_output: vec!["[line 2] Error at 'this': Can't use 'this' outside of a class."],
         },
     ]
 } // cargo test test_class_invalid_uses_of_this -- --exact [--nocapture]
@@ -398,7 +398,7 @@ fn get_class_invalid_returning_from_init_script_results<'a>() -> TestScriptAndRe
         TestScriptAndResult {
             script_name: "./tests/data/constructor/return_value.lox",
             expected_result: false,
-            expected_output: vec!["Error: [line 3] Error at 'return': Can't return a value from an initializer."],
+            expected_output: vec!["[line 3] Error at 'return': Can't return a value from an initializer."],
         },
     ]
 } // cargo test test_class_invalid_returning_from_init -- --exact [--nocapture]

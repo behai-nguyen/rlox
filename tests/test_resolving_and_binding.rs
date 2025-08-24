@@ -32,28 +32,28 @@ fn get_error_script_results<'a>() -> TestScriptAndResults<'a> {
         TestScriptAndResult {
             script_name: "./tests/data/return/at_top_level.lox",
             expected_result: false,
-            expected_output: vec!["Error: [line 1] Error at 'return': Can't return from top-level code."],
+            expected_output: vec!["[line 1] Error at 'return': Can't return from top-level code."],
         },
         // From author's https://github.com/munificent/craftinginterpreters/tree/master/test/variable
         TestScriptAndResult {
             script_name: "./tests/data/variable/collide_with_parameter.lox",
             expected_result: false,
-            expected_output: vec!["Error: [line 2] Error at 'a': Already a variable with this name in this scope."],
+            expected_output: vec!["[line 2] Error at 'a': Already a variable with this name in this scope."],
         },
         TestScriptAndResult {
             script_name: "./tests/data/variable/duplicate_local.lox",
             expected_result: false,
-            expected_output: vec!["Error: [line 3] Error at 'a': Already a variable with this name in this scope."],
+            expected_output: vec!["[line 3] Error at 'a': Already a variable with this name in this scope."],
         },
         TestScriptAndResult {
             script_name: "./tests/data/variable/duplicate_parameter.lox",
             expected_result: false,
-            expected_output: vec!["Error: [line 2] Error at 'arg': Already a variable with this name in this scope."],
+            expected_output: vec!["[line 2] Error at 'arg': Already a variable with this name in this scope."],
         },
         TestScriptAndResult {
             script_name: "./tests/data/variable/use_local_in_initializer.lox",
             expected_result: false,
-            expected_output: vec!["Error: [line 3] Error at 'a': Can't read local variable in its own initializer."],
+            expected_output: vec!["[line 3] Error at 'a': Can't read local variable in its own initializer."],
         },
     ]
 } // cargo test test_resolver_error -- --exact [--nocapture]
