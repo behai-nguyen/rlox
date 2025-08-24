@@ -1,0 +1,13 @@
+// Created based on https://github.com/munificent/craftinginterpreters/blob/master/test/unexpected_character.lox 
+//
+// [line 7] Error at '|': Unexpected character: |.
+// [line 9] Error at '?': Unexpected character: ?.
+// [line 13] Error at '%': Unexpected character: %.
+
+foo(a | b);
+
+foo(a ? b);
+
+2 + 
+
+print a % b;
