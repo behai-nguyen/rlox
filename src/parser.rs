@@ -15,7 +15,7 @@ use crate::stmt;
 use super::lox_error::LoxError;
 use super::token_type::TokenType;
 use super::token::{LiteralValue, LiteralValue::*, Token};
-use super::lox_error_helper::error; 
+use super::lox_error_helper::{error, sys_error}; 
 use super::expr::*;
 use super::stmt::*;
 use super::unwrap_stmt;
@@ -106,6 +106,13 @@ impl<'a> Parser<'a> {
                 return Ok(Rc::new(self.literal_expr(Number(*n))));
             }
             return Err(error(self.previous(), "Expected a number value"));
+        }
+
+        if self.match_token(&[TokenType::Super]) {
+            let keyword: Token = self.previous().clone();
+            self.consume(&TokenType::Dot, "Expect '.' after 'super'.")?;
+            let method: Token = self.consume(&TokenType::Identifier, "Expect superclass method name.")?.clone();
+            return Ok(Rc::new(Expr::Super(Super::new(keyword, method))))
         }
 
         if self.match_token(&[TokenType::This]) {
@@ -433,6 +440,13 @@ impl<'a> Parser<'a> {
 
     fn class_declaration(&mut self) -> Result<Rc<Stmt>, LoxError> {
         let name: Token = self.consume(&TokenType::Identifier, "Expect class name.")?.clone();
+
+        let mut superclass: Option<Rc<Expr>> = None;
+        if self.match_token(&[TokenType::Less]) {
+            self.consume(&TokenType::Identifier, "Expect superclass name.")?;
+            superclass = Some(Rc::new(Expr::Variable(Variable::new(self.previous().clone()))));
+        }
+
         self.consume(&TokenType::LeftBrace, "Expect '{' before class body.")?;
 
         let mut methods: Vec<Rc<Function>> = vec![];
@@ -445,8 +459,7 @@ impl<'a> Parser<'a> {
 
         self.consume(&TokenType::RightBrace, "Expect '}' after class body.")?;
 
-        // Stmt::Class is already ahead: it includes the `superclass` field already.
-        Ok(Rc::new(Stmt::Class(Class::new(name, None, methods))))
+        Ok(Rc::new(Stmt::Class(Class::new(name, superclass, methods))))
     }
 
     // The author's note:
@@ -514,13 +527,25 @@ impl<'a> Parser<'a> {
         self.expression()
     }
 
+    // Parses all tokens, captures all errors.
+    // When there are multiple errors, they are separated by a 
+    // newline ( \n ) character.
     pub fn parse(&mut self) -> Result<Vec<Rc<Stmt>>, LoxError> {
         let mut statements: Vec<Rc<Stmt>> = vec![];
-        while !self.is_at_end() {
-            statements.push(self.declaration()?);
-        }
+        let mut err_msgs: Vec<std::string::String> = vec![];
 
-        Ok(statements)
+        while !self.is_at_end() {
+            match self.declaration() {
+                Ok(stmt) => statements.push(stmt),
+                Err(err) => err_msgs.push(format!("{}", err)),
+            }
+        }
+        
+        if err_msgs.len() == 0 {
+            Ok(statements)
+        } else {
+            Err(sys_error("", &err_msgs.join("\n")))
+        }
     }
 }
 
