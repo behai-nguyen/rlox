@@ -152,49 +152,67 @@ pub fn assert_literal_none(val: &Option<LiteralValue>) {
 }
 
 #[allow(dead_code)]
+// Check scanning result.
+//
+// Scanner can result in multiple error messages. 
+//
 pub fn assert_scanner_result(tested_entry: &TestScriptAndResult, test_result: &ScannerResult) {
     // Check scanning result.
     match tested_entry.expected_result {
-        true => {
-            assert!(test_result.is_ok(), "1. assert_scanner_result(). Error in {}", tested_entry.script_name);
-            // TO_DO: there are no true cases yet...
-        },
+        true => {},
         false => {
             assert!(test_result.is_err(), "3. assert_scanner_result(). Error in {}", tested_entry.script_name);
-            assert_eq!(test_result.as_ref().unwrap_err().to_string(), 
-                tested_entry.expected_output[0], "4. assert_scanner_result(). Error in {}", tested_entry.script_name);
+            let err_msgs: Vec<String> = test_result.as_ref().unwrap_err()
+                .to_string()
+                .lines()
+                .map(|line| line.to_string())
+                .collect();
+            assert_eq!(err_msgs, tested_entry.expected_output, 
+                "4. assert_scanner_result(). Error in {}", tested_entry.script_name);                
         }
     }
 }
 
 #[allow(dead_code)]
-pub fn assert_parser_result(tested_entry: &TestScriptAndResult, test_result: &ParserResult) {
-    // Check Interpreting/evaluating result.
+// Check parsing result.
+//
+// Script such as ./tests/data/for/statement_condition.lox produces multiple 
+// error messages. 
+//
+pub fn assert_parser_result(tested_entry: &TestScriptAndResult, test_result: &ParserResult) {    
     match tested_entry.expected_result {
-        true => {
-            assert!(test_result.is_ok(), "1. assert_parser_result(). Error in {}", tested_entry.script_name);
-            // TO_DO: there are no true cases yet...
-        },
+        true => {},
         false => {            
             assert!(test_result.is_err(), "3. assert_parser_result(). Error in {}", tested_entry.script_name);            
-            assert_eq!(test_result.as_ref().unwrap_err().to_string(), 
-                tested_entry.expected_output[0], "4. assert_parser_result(). Error in {}", tested_entry.script_name);
+            let err_msgs: Vec<String> = test_result.as_ref().unwrap_err()
+                .to_string()
+                .lines()
+                .map(|line| line.to_string())
+                .collect();
+            assert_eq!(err_msgs, tested_entry.expected_output, 
+                "4. assert_parser_result(). Error in {}", tested_entry.script_name);
         }
     }
 }
 
 #[allow(dead_code)]
-pub fn assert_resolver_result(tested_entry: &TestScriptAndResult, test_result: &ResolverResult) {
-    // Check Interpreting/evaluating result.
+// Check resolver result.
+// 
+// Script such as `./tests/data/super/super_at_top_level.lox` produces multiple 
+// error messages. 
+//
+pub fn assert_resolver_result(tested_entry: &TestScriptAndResult, test_result: &ResolverResult) {    
     match tested_entry.expected_result {
-        true => {
-            assert!(test_result.is_ok(), "1. assert_resolver_result(). Error in {}", tested_entry.script_name);
-            // TO_DO: there are no true cases yet...
-        },
+        true => {},
         false => {            
-            assert!(test_result.is_err(), "3. assert_resolver_result(). Error in {}", tested_entry.script_name);            
-            assert_eq!(test_result.as_ref().unwrap_err().to_string(), 
-                tested_entry.expected_output[0], "4. assert_resolver_result(). Error in {}", tested_entry.script_name);
+            assert!(test_result.is_err(), "3. assert_resolver_result(). Error in {}", tested_entry.script_name);
+            let err_msgs: Vec<String> = test_result.as_ref().unwrap_err()
+                .to_string()
+                .lines()
+                .map(|line| line.to_string())
+                .collect();
+            assert_eq!(err_msgs, tested_entry.expected_output, 
+                "4. assert_resolver_result(). Error in {}", tested_entry.script_name);
         }
     }
 }
@@ -233,22 +251,50 @@ pub fn extract_output_lines(interpreter: &Interpreter) -> Vec<String> {
 }
 
 #[allow(dead_code)]
+// Check Interpreting/evaluating result.
+//
+// Script such as `./tests/data/super/extra_arguments.lox` produces both an 
+// evaluation ( Interpreter's successful evaluation output ) result, and then 
+// an evaluation error:
+//    Derived.foo()
+//    [line 10] Error at ')': Expected 2 arguments but got 4.
+// 
+// Both are written to `Interpreter::output` in occurrence-order.
+// While the returned error contains only error messages separated by 
+// a newline ( \n ) character.
 pub fn assert_interpreter_result(tested_entry: &TestScriptAndResult, 
     test_result: &InterpreterResult,
     interpreter: &Interpreter) {
-    // Check Interpreting/evaluating result.
+
+    // Interpreter::output contains all output in occurrence-order
+    // Extract output to test against expected output.
+    let lines = extract_output_lines(&interpreter);
+
     match tested_entry.expected_result {
         true => {
             assert!(test_result.is_ok(), "1. Error in {}", tested_entry.script_name);
-            // Extract output and ensure matching expected output.
-            let lines = extract_output_lines(&interpreter);
+            // Interpreter::output contains all output in occurrence-order
             assert_eq!(lines, tested_entry.expected_output, 
                 "2. Error in {}", tested_entry.script_name);
         },
-        false => {
+        false => {            
             assert!(test_result.is_err(), "3. Error in {}", tested_entry.script_name);
-            assert_eq!(test_result.as_ref().unwrap_err().to_string(), 
-                tested_entry.expected_output[0], "4. Error in {}", tested_entry.script_name);
+            // Interpreter::output contains all output in occurrence-order
+            assert_eq!(lines, tested_entry.expected_output, 
+                "4.a. Error in {}", tested_entry.script_name);
+
+            // The returned error contains only error messages separated by 
+            // a newline ( \n ) character.                
+            let err_msgs: Vec<String> = test_result.as_ref().unwrap_err()
+                .to_string()
+                .lines()
+                .map(|line| line.to_string())
+                .collect();
+            // All error messages should be listed in the tested_entry.expected_output
+            // entries.
+            for err_msg in err_msgs {
+                assert!(tested_entry.expected_output.contains(&err_msg.as_str()));
+            }
         }
     }
 }
