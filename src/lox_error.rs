@@ -10,6 +10,11 @@
 // To run test for this module only: 
 // 
 //     * cargo test lox_error::tests
+//
+//     * cargo test lox_error::tests::test_valid_error_message -- --exact [--nocapture]
+//     * cargo test lox_error::tests::test_valid_no_line -- --exact [--nocapture]
+//     * cargo test lox_error::tests::test_valid_no_line_no_lexeme -- --exact [--nocapture]
+//
 
 use std::fmt;
 
@@ -56,9 +61,9 @@ impl fmt::Display for LoxError {
             write!(f,"[line {}] Error at '{}': {}", self.line, self.lexeme, self.err_msg)
         } else {
             if self.lexeme.len() > 0 {
-                write!(f,"Error at '{}': {}", self.lexeme, self.err_msg)
+                write!(f, "Error at '{}': {}", self.lexeme, self.err_msg)
             } else {
-                write!(f,"Error: {}", self.err_msg)
+                write!(f, "{}", self.err_msg)
             }
         }
     }
@@ -76,5 +81,17 @@ mod tests {
     fn test_valid_error_message() {
         let err = LoxError::new(10, "idx", "this is a test error");
         assert_eq!("[line 10] Error at 'idx': this is a test error", err.to_string());
+    }
+
+    #[test]
+    fn test_valid_no_line() {
+        let err = LoxError::new(0, "super", "this is a test error");
+        assert_eq!("Error at 'super': this is a test error", err.to_string());
+    }
+
+    #[test]
+    fn test_valid_no_line_no_lexeme() {
+        let err = LoxError::new(0, "", "this is a test error");
+        assert_eq!("this is a test error", err.to_string());
     }
 }
