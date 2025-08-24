@@ -101,8 +101,8 @@ fn test_scanner_identifiers() {
     assert_eq!(token.token_type(), TokenType::Eof);
     assert_eq!(token.lexeme(), "");
     assert_literal_none(token.literal());
-    // 13 is correct. There are 13 lines.
-    assert_eq!(token.line(), 13);
+    // 13 is correct. There are 13 lines: but blank line is trimmed off.
+    assert_eq!(token.line(), 12);
 }
 
 #[test]
@@ -213,8 +213,8 @@ fn test_scanner_keywords() {
     assert_eq!(token.token_type(), TokenType::Eof);
     assert_eq!(token.lexeme(), "");
     assert_literal_none(token.literal());
-    // There are 19 lines in the script file.
-    assert_eq!(token.line(), 19);
+    // There are 19 lines in the script file: but blank line is trimmed off.
+    assert_eq!(token.line(), 18);
 }
 
 #[test]
@@ -275,8 +275,8 @@ fn test_scanner_numbers() {
     assert_eq!(token.token_type(), TokenType::Eof);
     assert_eq!(token.lexeme(), "");
     assert_literal_none(token.literal());
-    // There are 13 lines in the script file.
-    assert_eq!(token.line(), 13);
+    // There are 13 lines in the script file: but blank line is trimmed off.
+    assert_eq!(token.line(), 12);
 }
 
 #[test]
@@ -405,8 +405,8 @@ fn test_scanner_punctuators() {
     assert_eq!(token.token_type(), TokenType::Eof);
     assert_eq!(token.lexeme(), "");
     assert_literal_none(token.literal());
-    // The script file has 22 lines.
-    assert_eq!(token.line(), 22);
+    // The script file has 22 lines: but blank line is trimmed off.
+    assert_eq!(token.line(), 21);
 }
 
 #[test]
@@ -487,7 +487,8 @@ fn test_scanner_whitespace() {
     assert_eq!(token.token_type(), TokenType::Eof);
     assert_eq!(token.lexeme(), "");
     assert_literal_none(token.literal());
-    assert_eq!(token.line(), 13);
+    //The blank line is trimmed off.
+    assert_eq!(token.line(), 12);
 }
 
 #[test]
@@ -655,8 +656,8 @@ fn test_scanner_utf8_text() {
     assert_eq!(token.token_type(), TokenType::Eof);
     assert_eq!(token.lexeme(), "");
     assert_literal_none(token.literal());
-    // 24 lines in the script file.
-    assert_eq!(token.line(), 24);
+    // 24 lines in the script file: but blank line is trimmed off.
+    assert_eq!(token.line(), 23);
 }
 
 fn get_generic_script_results<'a>() -> TestScriptAndResults<'a> {    
@@ -667,10 +668,64 @@ fn get_generic_script_results<'a>() -> TestScriptAndResults<'a> {
             expected_result: false,
             expected_output: vec!["[line 2] Error at '\0': Unterminated string."],
         },
+        // Author's https://github.com/munificent/craftinginterpreters/tree/master/test/
+        //
+        // I have missed these root master/test/ author-provided scripts till after 
+        // completing Chapter 13.
+        // 
+        // The author does not seem to handle empty source text? The "Source text is empty."
+        // message is my own, the logic in the scanner to detect empty source text is also
+        // my own.
+        TestScriptAndResult {
+            script_name: "./tests/data/empty_file.lox",
+            expected_result: false,
+            expected_output: vec!["Source text is empty."],
+        },
+        // Note on `unexpected_character.lox` -- This script has two errors:
+        //
+        //     `[line 3] Error: Unexpected character.` -- is the scanner error.
+        //     `[java line 3] Error at 'b': Expect ')' after arguments.` -- is a parser error.
+        //
+        // In this implementation, if the Scanner is in error, everything stop. And so 
+        // on for the Parser and the Resolver.
+        // 
+        // As such, this is a Scanner test script.
+        TestScriptAndResult {
+            script_name: "./tests/data/unexpected_character.lox",
+            expected_result: false,
+            expected_output: vec!["[line 3] Error at '|': Unexpected character: |."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/scanning/multi_errors.lox",
+            expected_result: false,
+            expected_output: vec!["[line 7] Error at '|': Unexpected character: |.",
+                "[line 9] Error at '?': Unexpected character: ?.",
+                "[line 13] Error at '%': Unexpected character: %."],
+        },
     ] // cargo test test_scanner_generics -- --exact
 }
 
 #[test]
+// On author's https://github.com/munificent/craftinginterpreters/tree/master/test/
+//
+// I have missed these root master/test/ author-provided scripts till after 
+// completing Chapter 13.
+// 
+// On `empty_file.lox`:
+//
+// The author does not seem to handle empty source text? The "Source text is empty."
+// message is my own, the logic in the scanner to detect empty source text is also
+// my own.
+//
+// On `unexpected_character.lox` -- This script has two errors:
+//
+//     `[line 3] Error: Unexpected character.` -- is the scanner error.
+//     `[java line 3] Error at 'b': Expect ')' after arguments.` -- is a parser error.
+//
+// In this implementation, if the Scanner is in error, everything stop. And so 
+// on for the Parser and the Resolver.
+// 
+// As such, this is a Scanner test script.
 fn test_scanner_generics() {
     let generic_script_results = get_generic_script_results();
 
