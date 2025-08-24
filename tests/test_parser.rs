@@ -22,6 +22,8 @@
 //!     * cargo test test_parser_classes_field_and_property -- --exact [--nocapture]
 //!     * cargo test test_parser_classes_methods_on_classes -- --exact [--nocapture]
 //!     * cargo test test_parser_classes_this -- --exact [--nocapture]
+//!     * cargo test test_parser_inheritance_super_sub_class -- --exact [--nocapture]
+//!     * cargo test test_parser_inheritance_calling_superclass_method -- --exact [--nocapture]
 //! 
 
 use std::rc::Rc;
@@ -156,7 +158,8 @@ fn get_for_loops_script_results<'a>() -> TestScriptAndResults<'a> {
         TestScriptAndResult {
             script_name: "./tests/data/for/statement_condition.lox",
             expected_result: false,
-            expected_output: vec!["[line 3] Error at '{': Expect expression."],
+            expected_output: vec!["[line 3] Error at '{': Expect expression.",
+                "[line 3] Error at ')': Expect ';' after expression."],
         },
         TestScriptAndResult {
             script_name: "./tests/data/for/statement_increment.lox",
@@ -166,7 +169,8 @@ fn get_for_loops_script_results<'a>() -> TestScriptAndResults<'a> {
         TestScriptAndResult {
             script_name: "./tests/data/for/statement_initializer.lox",
             expected_result: false,
-            expected_output: vec!["[line 3] Error at '{': Expect expression."],
+            expected_output: vec!["[line 3] Error at '{': Expect expression.",
+                "[line 3] Error at ')': Expect ';' after expression."],
         },
         TestScriptAndResult {
             script_name: "./tests/data/for/var_in_body.lox",
@@ -293,6 +297,44 @@ fn get_classes_this_script_results<'a>() -> TestScriptAndResults<'a> {
         },
     ]
 } // cargo test test_parser_classes_this -- --exact [--nocapture]
+
+// Scripts in this method test code up to section:
+// https://craftinginterpreters.com/inheritance.html#superclasses-and-subclasses
+fn get_inheritance_super_sub_class_script_results<'a>() -> TestScriptAndResults<'a> {
+    vec![
+        // From author's https://github.com/munificent/craftinginterpreters/tree/master/test/inheritance
+        TestScriptAndResult {
+            script_name: "./tests/data/inheritance/parenthesized_superclass.lox",
+            expected_result: false,
+            expected_output: vec!["[line 4] Error at '(': Expect superclass name."],
+        },
+    ]
+} // cargo test test_parser_inheritance_super_sub_class -- --exact [--nocapture]
+
+// Scripts in this method test code up to section:
+// https://craftinginterpreters.com/inheritance.html#calling-superclass-methods
+// THE SUB-SECTION HAS NOT BEEN IMPLEMENTED YET: 
+//    https://craftinginterpreters.com/inheritance.html#invalid-uses-of-super
+fn get_inheritance_calling_superclass_method_script_results<'a>() -> TestScriptAndResults<'a> {
+    vec![
+        // From author's https://github.com/munificent/craftinginterpreters/tree/master/test/super
+        TestScriptAndResult {
+            script_name: "./tests/data/super/parenthesized.lox",
+            expected_result: false,
+            expected_output: vec!["[line 8] Error at ')': Expect '.' after 'super'."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/super/super_without_dot.lox",
+            expected_result: false,
+            expected_output: vec!["[line 6] Error at ';': Expect '.' after 'super'."],
+        },
+        TestScriptAndResult {
+            script_name: "./tests/data/super/super_without_name.lox",
+            expected_result: false,
+            expected_output: vec!["[line 5] Error at ';': Expect superclass method name."],
+        },
+    ]
+} // cargo test test_parser_inheritance_calling_superclass_method -- --exact [--nocapture]
 
 #[test]
 // The test script is from 
@@ -525,6 +567,44 @@ fn test_parser_classes_this() {
     let classes_this_script_results = get_classes_this_script_results();
 
     for entry in classes_this_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
+}
+
+#[test]
+// Scripts in this method test code up to section:
+// https://craftinginterpreters.com/inheritance.html#superclasses-and-subclasses
+fn test_parser_inheritance_super_sub_class() {
+    let ihrt_super_sub_class_script_results = get_inheritance_super_sub_class_script_results();
+
+    for entry in ihrt_super_sub_class_script_results {
+        // Ensure script is loaded, scanned and parsed successfully.
+        let tokens = assert_scan_script(entry.script_name);
+
+        // Parsing test.
+        let mut parser = make_parser(&tokens);
+        let res = parser.parse();
+
+        assert_parser_result(&entry, &res);
+   }
+}
+
+#[test]
+// Scripts in this method test code up to section:
+// https://craftinginterpreters.com/inheritance.html#calling-superclass-methods
+// THE SUB-SECTION HAS NOT BEEN IMPLEMENTED YET: 
+//    https://craftinginterpreters.com/inheritance.html#invalid-uses-of-super
+fn test_parser_inheritance_calling_superclass_method() {
+    let ihrt_calling_superclass_method_script_results = get_inheritance_calling_superclass_method_script_results();
+
+    for entry in ihrt_calling_superclass_method_script_results {
         // Ensure script is loaded, scanned and parsed successfully.
         let tokens = assert_scan_script(entry.script_name);
 
