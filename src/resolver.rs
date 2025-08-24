@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 use super::interpreter::Interpreter;
 use super::lox_runtime_error::LoxRuntimeError;
-use super::lox_error_helper::error;
+use super::lox_error_helper::{sys_error, runtime_error};
 use super::{expr, expr::Expr};
 use super::{stmt, stmt::{Stmt, Function}};
 use super::{unwrap_expr, unwrap_stmt};
@@ -27,6 +27,7 @@ enum FunctionType {
 enum ClassType {
     None,
     Class,
+    SubClass,
 }
 
 pub struct Resolver<'a> {
@@ -54,11 +55,23 @@ impl<'a> Resolver<'a> {
         Expr::accept_ref(expr, self)
     }
 
+    // Resolves all statements, captures all errors.
+    // When there are multiple errors, they are separated by a 
+    // newline ( \n ) character.
     pub fn resolve(&mut self, statements: &Vec<Rc<Stmt>>) -> Result<(), LoxRuntimeError> {
+        let mut err_msgs: Vec<String> = vec![];
+
         for stmt in statements {
-            self.resolve_statement(Rc::clone(stmt))?
+            match self.resolve_statement(Rc::clone(stmt)) {
+                Ok(_) => {},
+                Err(err) => err_msgs.push(format!("{}", err)),
+            }            
         }
-        Ok(())
+        if err_msgs.len() == 0 {
+            Ok(())
+        } else {
+            Err(LoxRuntimeError::Error(sys_error("", &err_msgs.join("\n"))))
+        }
     }
 
     fn begin_scope(&mut self) {
@@ -74,7 +87,8 @@ impl<'a> Resolver<'a> {
             let lexeme = name.lexeme();
 
             if scope.contains_key(lexeme) {
-                return Err(LoxRuntimeError::Error(error(name, "Already a variable with this name in this scope.")));
+                return Err(runtime_error(name, 
+                        "Already a variable with this name in this scope."));
             }
             scope.insert(lexeme.to_string(), false);
         }
@@ -180,8 +194,28 @@ impl<'a> expr::Visitor<()> for Resolver<'a> {
         Ok(())
     }
 
-    fn visit_super_expr(&mut self, _: Rc<Expr>) -> Result<(), LoxRuntimeError> {
-        unimplemented!()
+    // Author's note:
+    //     We resolve the super token exactly as if it were a variable. The resolution 
+    //     stores the number of hops along the environment chain that the interpreter 
+    //     needs to walk to find the environment where the superclass is stored.
+    // See https://craftinginterpreters.com/inheritance.html#calling-superclass-methods    
+    fn visit_super_expr(&mut self, expr: Rc<Expr>) -> Result<(), LoxRuntimeError> {
+        let binding = expr.clone();
+        let inner = unwrap_expr!(binding, Super);
+
+        match self.current_class {
+            ClassType::None => 
+                return Err(runtime_error(inner.keyword(), 
+                    "Can't use 'super' outside of a class.")),
+            val if val != ClassType::SubClass => 
+                return Err(runtime_error(inner.keyword(), 
+                    "Can't use 'super' in a class with no superclass.")),
+            _ => {},
+        }
+
+        self.resolve_local(expr, inner.keyword());
+
+        Ok(())
     }
 
     fn visit_this_expr(&mut self, expr: Rc<Expr>) -> Result<(), LoxRuntimeError> {
@@ -189,11 +223,9 @@ impl<'a> expr::Visitor<()> for Resolver<'a> {
         let this = unwrap_expr!(binding, This);
 
         if self.current_class == ClassType::None {
-            return Err(LoxRuntimeError::Error(
-                error(this.keyword(), "Can't use 'this' outside of a class."))
-            );
+            return Err(runtime_error(this.keyword(), 
+                "Can't use 'this' outside of a class."));
         }
-
         self.resolve_local(expr, this.keyword());
 
         Ok(())
@@ -212,9 +244,8 @@ impl<'a> expr::Visitor<()> for Resolver<'a> {
 
         if let Some(scope) = self.scopes.last() {
             if let Some(&false) = scope.get(variable.name().lexeme()) {
-                return Err(LoxRuntimeError::Error(
-                    error(variable.name(), "Can't read local variable in its own initializer."))
-                );
+                return Err(runtime_error(variable.name(), 
+                    "Can't read local variable in its own initializer."));
             }
         }
 
@@ -242,6 +273,31 @@ impl<'a> stmt::Visitor<()> for Resolver<'a> {
         self.declare(class.name())?;
         self.define(class.name());
 
+        if let Some(expr) = class.superclass() {
+            // Superclass is a variable, the author states:
+            //
+            //     > Wrapping the name in an Expr.Variable early on in the parser gives us 
+            //     > an object that the resolver can hang the resolution information off of.
+            //
+            // See https://craftinginterpreters.com/inheritance.html#superclasses-and-subclasses
+            //
+            // We are defensive: If for some reasone, the parser does not store a superclass
+            // as an Expr::Variable, then returns an error instead of panic.
+            if let Expr::Variable(var) = expr.as_ref() {
+                if class.name().lexeme() == var.name().lexeme() {
+                    return Err(runtime_error(var.name(), "A class can't inherit from itself."));
+                }
+                self.current_class = ClassType::SubClass;
+                self.resolve_expression(Rc::clone(expr))?
+            } else {
+                return Err(runtime_error(class.name(), "Superclass must be a variable."));
+            }
+            self.begin_scope();
+            if let Some(scope) = self.scopes.last_mut() {
+                scope.insert("super".to_string(), true);
+            }            
+        }
+
         self.begin_scope();
         if let Some(scope) = self.scopes.last_mut() {
             scope.insert("this".to_string(), true);
@@ -260,6 +316,10 @@ impl<'a> stmt::Visitor<()> for Resolver<'a> {
         }
 
         self.end_scope();
+
+        if class.superclass().is_some() {
+            self.end_scope();
+        }
 
         self.current_class = enclosing_class;
 
@@ -305,16 +365,13 @@ impl<'a> stmt::Visitor<()> for Resolver<'a> {
         let inner = unwrap_stmt!(stmt, Return);
 
         if self.current_function == FunctionType::Nil {
-            return Err(LoxRuntimeError::Error(
-                error(inner.keyword(), "Can't return from top-level code."))
-            );
+            return Err(runtime_error(inner.keyword(), "Can't return from top-level code."));
         }
 
         if let Some(expr) = inner.value() {
             if self.current_function == FunctionType::Initializer {
-                return Err(LoxRuntimeError::Error(
-                    error(inner.keyword(), "Can't return a value from an initializer."))
-                );
+                return Err(runtime_error(inner.keyword(), 
+                    "Can't return a value from an initializer."));
             }
             self.resolve_expression(Rc::clone(expr))?;
         };
