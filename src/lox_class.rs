@@ -23,19 +23,28 @@ pub type LoxFunctionsMap = HashMap<String, LoxFunction>;
 #[derive(Debug, Clone, PartialEq)]
 pub struct LoxClass {
     name: String,
+    superclass: Option<Rc<LoxClass>>,
     methods: LoxFunctionsMap,
 }
 
 impl LoxClass {
-    pub fn new(name: String, methods: LoxFunctionsMap) -> Self {
+    pub fn new(name: String, 
+        superclass: Option<Rc<LoxClass>>, 
+        methods: LoxFunctionsMap) -> Self {
         LoxClass { 
             name, 
+            superclass,
             methods,
         }
     }
 
-    pub fn find_method(&self, name: &str) -> Option<&LoxFunction> {
-        self.methods.get(name)
+    pub fn find_method(&self, name: &str) -> Option<LoxFunction> {
+        if let Some(method) = self.methods.get(name) {
+            return Some(method.clone());
+        } else if let Some(sc) = &self.superclass {
+            return sc.find_method(name);
+        }
+        None
     }
 }
 
