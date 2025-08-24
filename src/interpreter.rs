@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use crate::token_type::TokenType;
 use super::lox_error::LoxError;
 use super::lox_runtime_error::LoxRuntimeError;
-use super::lox_error_helper::error; 
+use super::lox_error_helper::{error, sys_error, runtime_error}; 
 use super::token::{LiteralValue, Token};
 use super::value::Value;
 use super::{expr, expr::Expr};
@@ -236,12 +236,32 @@ impl Interpreter {
         Ok(self.stringify(&value))
     }
 
+    // Interpret all statements, captures all errors.
+    // 
+    // Both evaluation ( Interpreter's successful evaluation output ) results, 
+    // and evaluation errors are written to `output` in occurrence-order.
+    // 
+    // Evaluation errors are also captured in occurrence-order and returned 
+    // via Err(LoxError). When there are multiple errors, they are separated 
+    // by a newline ( \n ) character.
     pub fn interpret(&mut self, statements: &Vec<Rc<Stmt>>) -> Result<(), LoxError> {
+        let mut err_msgs: Vec<String> = vec![];
+
         for statement in statements {
-            self.execute(Rc::clone(statement))?;
+            match self.execute(Rc::clone(statement)) {
+                Ok(_) => {},
+                Err(err) => {
+                    err_msgs.push(format!("{}", err));
+                    self.write_output(&format!("{}", err));
+                }
+            }
         }
 
-        Ok(())
+        if err_msgs.len() == 0 {
+            Ok(())
+        } else {
+            Err(sys_error("", &err_msgs.join("\n")))
+        }
     }
 }
 
@@ -302,9 +322,8 @@ impl expr::Visitor<Value> for Interpreter {
                     (Value::String(ls), Value::String(rs)) => {
                         Ok(Value::String(format!("{}{}", ls, rs)))
                     }                    
-                    _ => Err(
-                        LoxRuntimeError::Error(error(operator, "Operands must be two numbers or two strings."))
-                    ),
+                    _ => Err(runtime_error(operator, 
+                             "Operands must be two numbers or two strings."))
                 }
             }
             TokenType::Slash => Ok(self.binary_number_op(operator, &left, &right, |a, b| a / b)?),
@@ -327,15 +346,12 @@ impl expr::Visitor<Value> for Interpreter {
         match callee {
             Value::LoxCallable(func) => {
                 if arguments.len() != func.arity() {
-                    return Err(LoxRuntimeError::Error(error(call.paren(), 
-                        &format!("Expected {} arguments but got {}.", 
-                                    func.arity(), arguments.len()))));
+                    return Err(runtime_error(call.paren(), &format!(
+                        "Expected {} arguments but got {}.", func.arity(), arguments.len())));
                 }
                 Ok(func.call(self, arguments)?)
             }
-            _ => Err(
-                LoxRuntimeError::Error(error(call.paren(), "Can only call functions and classes."))
-            ),
+            _ => Err(runtime_error(call.paren(), "Can only call functions and classes."))
         }        
     }
 
@@ -346,7 +362,7 @@ impl expr::Visitor<Value> for Interpreter {
         match object {
             Value::LoxInstance(instance) => 
                 Ok(LoxInstance::get(Rc::clone(&instance), get.name())?),
-            _ => Err(LoxRuntimeError::Error(error(get.name(), "Only instances have properties."))),
+            _ => Err(runtime_error(get.name(), "Only instances have properties."))
         }
     }
 
@@ -389,13 +405,39 @@ impl expr::Visitor<Value> for Interpreter {
                 inst.borrow_mut().set(set.name(), value.clone());
                 Ok(value)
             },
-            _ => Err(LoxRuntimeError::Error(
-                    error(set.name(), "Only instances have fields.")))
+            _ => Err(runtime_error(set.name(), "Only instances have fields."))
         }
     }
 
-    fn visit_super_expr(&mut self, _: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
-        unimplemented!()
+    fn visit_super_expr(&mut self, expr: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
+        let binding = expr.clone();
+        let inner = unwrap_expr!(binding, Super);
+
+        let distance = match self.locals.get(&Rc::as_ptr(&expr)) {
+            Some(d) => *d,
+            None => return Err(runtime_error(inner.method(), "Unresolved 'super' expression.")),
+        };        
+
+        let superclass = match Environment::get_at(&self.environment, distance, "super") {
+            Value::LoxCallable(callable) => callable
+                .as_any()
+                .downcast_ref::<LoxClass>()
+                .cloned()
+                .ok_or_else(|| runtime_error(inner.method(), "Expecting a class."))?,
+            _ => return Err(runtime_error(inner.method(), "Expecting a class.")),
+        };
+
+        let object = match Environment::get_at(&self.environment, distance - 1, "this") {
+            Value::LoxInstance(instance) => instance.clone(),
+            _ => return Err(runtime_error(inner.method(), "Expecting an instance.")),
+        };
+
+        match superclass.find_method(inner.method().lexeme()) {
+            Some(unbound_method) => Ok(Value::LoxCallable(Rc::new(unbound_method.bind(object)))),
+            None => Err(runtime_error(inner.method(), 
+                &format!("Undefined property '{}'.", inner.method().lexeme()))),
+        }
+
     }
 
     fn visit_this_expr(&mut self, expr: Rc<Expr>) -> Result<Value, LoxRuntimeError> {
@@ -444,7 +486,31 @@ impl stmt::Visitor<()> for Interpreter {
     fn visit_class_stmt(&mut self, stmt: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
         let class = unwrap_stmt!(stmt, Class);
 
+        let mut superclass: Option<Rc<LoxClass>> = None;
+        if let Some(expr) = class.superclass() {
+            let value = self.evaluate(Rc::clone(expr))?;
+            match value {
+                Value::LoxCallable(callable) => {
+                    if let Some(lox_class) = callable.as_any().downcast_ref::<LoxClass>() {
+                        superclass = Some(Rc::new(lox_class.clone()));
+                    } else {
+                        return Err(runtime_error(class.name(), "Superclass must be a class."));
+                    }
+                }
+                _ => return Err(runtime_error(class.name(), "Superclass must be a class.")),
+            }
+        }
+
         self.environment.borrow_mut().define(class.name().lexeme().to_string(), Value::Nil); 
+
+        let enclosing = Rc::clone(&self.environment);
+
+        if let Some(expr) = class.superclass() {
+            let value = self.evaluate(Rc::clone(expr))?;
+            let super_env = Rc::new(RefCell::new(Environment::new_local_scope(Rc::clone(&self.environment))));
+            super_env.borrow_mut().define("super".to_string(), value);
+            self.environment = Rc::clone(&super_env);
+        }
 
         let mut methods: LoxFunctionsMap = HashMap::new();
         for method in class.methods() {
@@ -453,7 +519,13 @@ impl stmt::Visitor<()> for Interpreter {
             methods.insert(method.name().lexeme().to_string(), function);
         }
 
-        let klass: LoxClass = LoxClass::new(class.name().lexeme().to_string(), methods);
+        let klass: LoxClass = LoxClass::new(class.name().lexeme().to_string(), 
+            superclass, methods);
+
+        if class.superclass().is_some() {
+            self.environment = enclosing;
+        }
+
         self.environment.borrow_mut().assign(
             class.name(),
             Value::LoxCallable(Rc::new(klass))
