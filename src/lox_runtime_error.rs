@@ -54,7 +54,7 @@ impl From<LoxRuntimeError> for LoxError {
 impl fmt::Display for LoxRuntimeError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            LoxRuntimeError::Error(err) => write!(f, "Error: {}", err),
+            LoxRuntimeError::Error(err) => write!(f, "{}", err),
             LoxRuntimeError::Return(ret) => write!(f, "Return: {}", ret),
         }
     }
