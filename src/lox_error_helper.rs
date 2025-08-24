@@ -4,6 +4,7 @@
 //! [`super::lox_error::LoxError`].
 
 use super::lox_error::LoxError;
+use super::lox_runtime_error::LoxRuntimeError;
 use super::token::Token;
 
 /// Report an error at a line and a character. Used by the scanner.
@@ -21,4 +22,8 @@ pub fn error(token: &Token, message: &str) -> LoxError {
 /// should call this to create return error for `Result<T, LoxError>`.
 pub fn sys_error(lexeme: &str, message: &str) -> LoxError {
     LoxError::new(0, lexeme, message)
+}
+
+pub fn runtime_error(token: &Token, msg: &str) -> LoxRuntimeError {
+    LoxRuntimeError::Error(error(token, msg))
 }
