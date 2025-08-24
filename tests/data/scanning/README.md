@@ -14,3 +14,7 @@ All scripts are used in [tests/test_scanner.rs](https://github.com/behai-nguyen/
 [ https://github.com/fampiyush/rlox?tab=readme-ov-file#example ](https://github.com/fampiyush/rlox?tab=readme-ov-file#example).
 
 3. `utf8_text.lox` is my own.
+
+4. `multi_errors.lox` is my own.
+
+Created after completing Chapter 13, the last chapter in Part II.
