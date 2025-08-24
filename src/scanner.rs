@@ -18,7 +18,7 @@
 use std::collections::HashMap;
 
 use super::lox_error::LoxError;
-use super::lox_error_helper::scanner_error; 
+use super::lox_error_helper::{scanner_error, sys_error}; 
 use super::scanner_index::ScannerIndex;
 use super::token::{LiteralValue, Token};
 use super::token_type::TokenType;
@@ -33,7 +33,7 @@ pub struct Scanner<'a> {
 impl<'a> Scanner<'a> {
     pub fn new(source: &'a str) -> Self {
         Scanner {
-            source,
+            source: source.trim(),
             indexes: ScannerIndex::new(),
         }
     }
@@ -294,19 +294,36 @@ impl<'a> Scanner<'a> {
         keywords
     }
 
+    // Scans the full source-text, captures all errors.
+    // When there are multiple errors, they are separated by a 
+    // newline ( \n ) character.    
     pub fn scan_tokens(&mut self) -> Result<Vec<Token>, LoxError> {
+        if self.is_at_end() {
+            return Err(sys_error("", "Source text is empty."));
+        }
+
         let keywords: KeywordsMap = Self::create_keywords_map();
 
         let mut tokens = Vec::<Token>::new();
+
+        let mut err_msgs: Vec<String> = vec![];
 
         while !self.is_at_end() {
             // We are at the beginning of the next lexeme.
             let _ = &self.indexes.set_start(self.indexes.get_byte_count());
  
-            self.scan_token(&keywords, &mut tokens)?;
+            match self.scan_token(&keywords, &mut tokens) {
+                Ok(_) => {},
+                Err(err) => err_msgs.push(format!("{}", err)),                
+            }
         }
 
-        tokens.push(Token::new(TokenType::Eof, "".to_string(), None, self.indexes.get_line()));
-        Ok(tokens)
+        if err_msgs.len() == 0 {
+            tokens.push(Token::new(TokenType::Eof, "".to_string(), None, self.indexes.get_line()));
+            Ok(tokens)
+        } else {
+            Err(sys_error("", &err_msgs.join("\n")))
+        }
+
     }
 }
