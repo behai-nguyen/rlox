@@ -9,6 +9,14 @@ For each completed stage, I document my progress in a post, which is listed in t
 A working guide to the Lox language features currently implemented in this project.  
 → [View RLoxGuide.md](https://github.com/behai-nguyen/rlox/blob/main/docs/RLoxGuide.md)
 
+## Process Flow: `Scanner`, `Parser`, `Resolver`, and `Interpreter`
+
+When the `Scanner` encounters an error, no token list is produced, so the `Parser` cannot and should not run. Similarly, if the `Parser` fails, no statement list is available, and the  `Resolver` should not run. If the `Resolver` fails, the `Interpreter` should not run either. While the statement list from the `Parser` remains available, attempting to evaluate unresolved statements with the `Interpreter` would be futile.
+
+This interaction between the four components is illustrated in the flowchart below:
+
+![scanner-parser-resolver-interpret.png](https://behainguyen.wordpress.com/wp-content/uploads/2025/08/scanner-parser-resolver-interpret.png)
+
 ## To Run
 
 Clone the repository to your local machine:
@@ -132,6 +140,16 @@ git clone -b v0.6.0 https://github.com/behai-nguyen/rlox.git
 ```
 
 This post covers Chapter 12 of <a href="https://craftinginterpreters.com/classes.html" title="Classes" target="_blank">Crafting Interpreters</a>: <strong>Classes</strong>. The following new syntax elements have been implemented: <code>Stmt::Class</code>, <code>Expr::Get</code>, <code>Expr::Set</code>, and <code>Expr::This</code>. Lox now supports <code>class</code>, <code>this</code>, and <code>init</code>. While implementing this chapter, I encountered two stack overflow bugs and several cases where author-provided test scripts produced incorrect results. This post discusses those issues in detail.
+
+10. [rlox: A Rust Implementation of “Crafting Interpreters” – Inheritance](https://behainguyen.wordpress.com/2025/08/24/rlox-a-rust-implementation-of-crafting-interpreters-inheritance/)
+
+The code version for the above post has been tagged with **v0.6.1**. It can be cloned with:
+  
+```
+git clone -b v0.6.1 https://github.com/behai-nguyen/rlox.git
+```
+
+This post covers Chapter 13 of <a href="https://craftinginterpreters.com/inheritance.html" title="Inheritance" target="_blank">Crafting Interpreters</a>: <strong>Inheritance</strong>. Class inheritance syntax <span style="font-weight:bold;font-size:1.5em;"><code>&lt;</code></span> — <code>Class</code> <span style="font-weight:bold;font-size:1.5em;"><code>&lt;</code></span> <code>SuperClass</code> — has been implemented. The final remaining syntax element, <code>Expr::Super</code>, representing the <code>super</code> keyword, has also been added. In this post, we briefly discuss the new code, followed by bug fixes and test updates.
 
 ## License
 [MIT license](http://www.opensource.org/licenses/mit-license.php)
