@@ -26,19 +26,21 @@ pub enum AstFragment<'a> {
     Stmt(Rc<stmt::Stmt>),
     Token(&'a Token),
     Text(String),
+    #[allow(dead_code)]
     Group(Vec<AstFragment<'a>>),
 }
 
 impl<'a> AstFragment<'a> {
+    #[allow(dead_code)]
     fn write_to(&self, printer: &mut AstPrinter, builder: &mut String) {
         builder.push(' ');
         match self {
             AstFragment::Expr(e) => builder.push_str(
-                &expr::Expr::accept_ref(e.clone(), printer)
+                &expr::Expr::accept(e.clone(), printer)
                     .unwrap_or_else(|err| format!("[Error printing expression: {}]", err))
             ),
             AstFragment::Stmt(s) => builder.push_str(
-                &stmt::Stmt::accept_ref(Rc::clone(s), printer)
+                &stmt::Stmt::accept(Rc::clone(s), printer)
                     .unwrap_or_else(|err| format!("[Error printing statement: {}]", err))
             ),
             AstFragment::Token(t) => builder.push_str(t.lexeme()),
@@ -56,18 +58,18 @@ pub struct AstPrinter;
 
 impl AstPrinter {
     pub fn print_expression(&mut self, expr: Rc<expr::Expr>) -> Result<String, LoxRuntimeError> {
-        expr::Expr::accept_ref(expr, self)
+        expr::Expr::accept(expr, self)
     }
 
     pub fn print_statement(&mut self, stmt: Rc<stmt::Stmt>) -> Result<String, LoxRuntimeError> {
-        stmt::Stmt::accept_ref(stmt, self)
+        stmt::Stmt::accept(stmt, self)
     }
 
     fn parenthesize(&mut self, name: &str, exprs: &[Rc<expr::Expr>]) -> Result<String, LoxError> {
         let mut builder = String::from(format!("({}", name));
 
         for e in exprs {
-            builder.push_str(&format!(" {}", expr::Expr::accept_ref(e.clone(), self)?));
+            builder.push_str(&format!(" {}", expr::Expr::accept(e.clone(), self)?));
         }        
         builder.push_str(")");
 
@@ -79,11 +81,11 @@ impl AstPrinter {
             builder.push(' ');
             match part {
                 AstFragment::Expr(e) => builder.push_str(
-                    &expr::Expr::accept_ref(e.clone(), self)
+                    &expr::Expr::accept(e.clone(), self)
                         .unwrap_or_else(|err| format!("[Error printing expression: {}]", err))
                 ),                
                 AstFragment::Stmt(stmt) => builder.push_str(
-                    &stmt::Stmt::accept_ref(Rc::clone(stmt), self)
+                    &stmt::Stmt::accept(Rc::clone(stmt), self)
                         .unwrap_or_else(|err| format!("[Error printing statement: {}]", err))
                 ),
                 AstFragment::Token(token) => builder.push_str(token.lexeme()),
@@ -302,7 +304,7 @@ impl stmt::Visitor<String> for AstPrinter {
         builder.push_str(") ");
 
         for body in function.body() {
-            builder.push_str(&stmt::Stmt::accept_ref(Rc::clone(body), self)?);
+            builder.push_str(&stmt::Stmt::accept(Rc::clone(body), self)?);
         }
 
         builder.push_str(")");
