@@ -39,7 +39,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn advance(&mut self) -> Option<char> {
-        if let Some(c) = self.source.chars().nth(self.indexes.get_current()) {
+        if let Some(c) = self.source.chars().nth(self.indexes.current()) {
             self.indexes.inc_lexeme_indexes(c.len_utf8());
             Some(c)
         } else {
@@ -48,7 +48,7 @@ impl<'a> Scanner<'a> {
     }
 
     fn is_at_end(&mut self) -> bool {
-        self.indexes.get_current() >= self.source.chars().count()
+        self.indexes.current() >= self.source.chars().count()
     }    
 
     fn match_char(&mut self, expected: char) -> bool {
@@ -56,7 +56,7 @@ impl<'a> Scanner<'a> {
             return false;
         }
 
-        match self.source.chars().nth(self.indexes.get_current()) {
+        match self.source.chars().nth(self.indexes.current()) {
             Some(c) => {
                 if c != expected {
                     return false;
@@ -75,7 +75,7 @@ impl<'a> Scanner<'a> {
             return '\0';
         }
 
-        if let Some(c) = self.source.chars().nth(self.indexes.get_current()) {
+        if let Some(c) = self.source.chars().nth(self.indexes.current()) {
             c
         } else {
             // Not in original https://craftinginterpreters.com/scanning.html#the-scanner-class
@@ -84,11 +84,11 @@ impl<'a> Scanner<'a> {
     }
 
     fn peek_next(&mut self) -> char {
-        if (self.indexes.get_current() + 1) >= self.source.len() {
+        if (self.indexes.current() + 1) >= self.source.len() {
             return '\0';
         }
 
-        if let Some(c) = self.source.chars().nth(self.indexes.get_current() + 1) {
+        if let Some(c) = self.source.chars().nth(self.indexes.current() + 1) {
             c
         } else {
             // Not in https://craftinginterpreters.com/scanning.html#the-scanner-class
@@ -107,14 +107,14 @@ impl<'a> Scanner<'a> {
         }
 
         if self.is_at_end() {
-            return Err(scanner_error(self.indexes.get_line(), self.peek(), "Unterminated string."));
+            return Err(scanner_error(self.indexes.line(), self.peek(), "Unterminated string."));
         }
 
         // The closing ".
         self.advance();
 
         // Trim the surrounding quotes.
-        let value = self.source[self.indexes.get_start() + 1..self.indexes.get_byte_count() - 1].to_string();
+        let value = self.source[self.indexes.start() + 1..self.indexes.byte_count() - 1].to_string();
 
         self.add_token_with_literal(lst, TokenType::String, 
             Some(LiteralValue::String(value)));
@@ -141,7 +141,7 @@ impl<'a> Scanner<'a> {
             }
         }
 
-        let mut str = self.source[self.indexes.get_start()..self.indexes.get_byte_count()].to_string();
+        let mut str = self.source[self.indexes.start()..self.indexes.byte_count()].to_string();
         if !str.contains('.') {
             str.push_str(".0");
         } else if str.ends_with('.') {
@@ -150,7 +150,7 @@ impl<'a> Scanner<'a> {
 
         let value = str
             .parse::<f64>()
-            .map_err(|e| scanner_error(self.indexes.get_line(), self.peek(), &format!("Failed to parse float: {}", e)))?;
+            .map_err(|e| scanner_error(self.indexes.line(), self.peek(), &format!("Failed to parse float: {}", e)))?;
 
         self.add_token_with_literal(lst, TokenType::Number, 
             Some(LiteralValue::Number(value)));
@@ -173,7 +173,7 @@ impl<'a> Scanner<'a> {
             self.advance();
         }
 
-        let keyword = self.source[self.indexes.get_start()..self.indexes.get_byte_count()].to_string();
+        let keyword = self.source[self.indexes.start()..self.indexes.byte_count()].to_string();
 
         if let Some(token) = keywords.get(keyword.as_str()) {
             self.add_token(lst, token.clone());
@@ -192,8 +192,8 @@ impl<'a> Scanner<'a> {
         lst: &mut Vec<Token>,
         type_: TokenType, 
         literal: Option<LiteralValue>) {
-            let lex = self.source[self.indexes.get_start()..self.indexes.get_byte_count()].to_string();
-            lst.push(Token::new(type_, lex, literal, self.indexes.get_line()));
+            let lex = self.source[self.indexes.start()..self.indexes.byte_count()].to_string();
+            lst.push(Token::new(type_, lex, literal, self.indexes.line()));
     }
 
     fn scan_token(&mut self, 
@@ -262,7 +262,7 @@ impl<'a> Scanner<'a> {
                 } else if Self::is_alpha(c) {
                     self.identifier(keywords, lst);
                 } else {
-                    return Err(scanner_error(self.indexes.get_line(), c,  &format!("Unexpected character: {}.", c)));
+                    return Err(scanner_error(self.indexes.line(), c,  &format!("Unexpected character: {}.", c)));
                 }
             }
         }
@@ -310,7 +310,7 @@ impl<'a> Scanner<'a> {
 
         while !self.is_at_end() {
             // We are at the beginning of the next lexeme.
-            let _ = &self.indexes.set_start(self.indexes.get_byte_count());
+            let _ = &self.indexes.set_start(self.indexes.byte_count());
  
             match self.scan_token(&keywords, &mut tokens) {
                 Ok(_) => {},
@@ -319,7 +319,7 @@ impl<'a> Scanner<'a> {
         }
 
         if err_msgs.len() == 0 {
-            tokens.push(Token::new(TokenType::Eof, "".to_string(), None, self.indexes.get_line()));
+            tokens.push(Token::new(TokenType::Eof, "".to_string(), None, self.indexes.line()));
             Ok(tokens)
         } else {
             Err(sys_error("", &err_msgs.join("\n")))
