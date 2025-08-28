@@ -32,19 +32,19 @@ impl ScannerIndex {
         }
     }
 
-    pub fn get_start(&self) -> usize {
+    pub fn start(&self) -> usize {
         self.start
     }
 
-    pub fn get_current(&self) -> usize {
+    pub fn current(&self) -> usize {
         self.current
     }
 
-    pub fn get_byte_count(&self) -> usize {
+    pub fn byte_count(&self) -> usize {
         self.byte_count        
     }
 
-    pub fn get_line(&self) -> usize {
+    pub fn line(&self) -> usize {
         self.line
     }
 
