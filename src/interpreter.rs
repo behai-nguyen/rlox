@@ -127,16 +127,34 @@ impl Interpreter {
         }
     }
 
+    #[allow(dead_code)]
+    // Used by tests.
+    // 
+    // `interpreter.reset(true);` is actuall almost equivalent to creating a 
+    // new instance: it kind of defeats the purpose of a `reset()` method!
+    //
+    // However, method exposes how the internal state of the `Interpreter`
+    // actually behaves, it is not harmful of keep this method as is.
+    pub fn reset(&mut self, globals_also: bool) {
+        if globals_also {
+            self.globals = Rc::new(RefCell::new(Environment::new()));
+            Self::initialize_globals(&self.globals);
+        }
+        self.locals.clear();
+        self.environment = Rc::clone(&self.globals);
+        self.clear_output();
+    }
+
     fn write_output(&mut self, value: &str) {
         writeln!(self.output, "{}", value).expect("Failed to write output");
     }
 
     fn evaluate(&mut self, expr: Rc<Expr>) -> Result<Value, LoxError> {
-        Ok(Expr::accept_ref(expr, self)?)
+        Ok(Expr::accept(expr, self)?)
     }
 
     fn execute(&mut self, stmt: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
-        Stmt::accept_ref(stmt, self)
+        Stmt::accept(stmt, self)
     }
 
     pub fn resolve(&mut self, expr: Rc<Expr>, depth: usize) {
