@@ -74,21 +74,15 @@ impl GenerateAst {
         }
         file.write_all("}\n\n".as_bytes())?;
 
-        file.write_all(format!("// Implement `accept()`, `accept_ref()` for `{}`\n", base_name).as_bytes())?;
+        // file.write_all(format!("// Implement `accept()`, `accept_ref()` for `{}`\n", base_name).as_bytes())?;
+        file.write_all(format!("// Implement `accept()` for `{}`.\n", base_name).as_bytes())?;
         file.write_all(format!("impl {} {{\n", base_name).as_bytes())?;
         file.write_all(format!("    pub fn accept<T>({0}: Rc<{1}>, visitor: &mut dyn Visitor<T>) \
                                         -> Result<T, LoxRuntimeError> {{\n", base_name.to_lowercase(), base_name).as_bytes())?;        
         file.write_all(format!("        match {}.as_ref() {{\n", base_name.to_lowercase()).as_bytes())?;
         Self::accept_pattern_matching_dispatch(file, base_name, types)?;
         file.write_all("        }\n".as_bytes())?; // match self closing
-        file.write_all("    }\n\n".as_bytes())?; // pub fn accept() closing.
-
-        file.write_all(format!("    pub fn accept_ref<T>({0}: Rc<{1}>, visitor: &mut dyn Visitor<T>) \
-                                        -> Result<T, LoxRuntimeError> {{\n", base_name.to_lowercase(), base_name).as_bytes())?;        
-        file.write_all(format!("        match {}.as_ref() {{\n", base_name.to_lowercase()).as_bytes())?;
-        Self::accept_pattern_matching_dispatch(file, base_name, types)?;
-        file.write_all("        }\n".as_bytes())?; // match self closing
-        file.write_all("    }\n".as_bytes())?; // pub fn accept_ref() closing.
+        file.write_all("    }\n".as_bytes())?; // pub fn accept() closing.
 
         file.write_all("}\n".as_bytes())?;
 

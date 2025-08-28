@@ -345,26 +345,9 @@ pub trait Visitor<T> {
     fn visit_variable_expr(&mut self, expr: Rc<Expr>) -> Result<T, LoxRuntimeError>;
 }
 
-// Implement `accept()`, `accept_ref()` for `Expr`
+// Implement `accept()` for `Expr`.
 impl Expr {
     pub fn accept<T>(expr: Rc<Expr>, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {
-        match expr.as_ref() {
-            Expr::Assign(_) => visitor.visit_assign_expr(expr),
-            Expr::Binary(_) => visitor.visit_binary_expr(expr),
-            Expr::Call(_) => visitor.visit_call_expr(expr),
-            Expr::Get(_) => visitor.visit_get_expr(expr),
-            Expr::Grouping(_) => visitor.visit_grouping_expr(expr),
-            Expr::Literal(_) => visitor.visit_literal_expr(expr),
-            Expr::Logical(_) => visitor.visit_logical_expr(expr),
-            Expr::Set(_) => visitor.visit_set_expr(expr),
-            Expr::Super(_) => visitor.visit_super_expr(expr),
-            Expr::This(_) => visitor.visit_this_expr(expr),
-            Expr::Unary(_) => visitor.visit_unary_expr(expr),
-            Expr::Variable(_) => visitor.visit_variable_expr(expr),
-        }
-    }
-
-    pub fn accept_ref<T>(expr: Rc<Expr>, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {
         match expr.as_ref() {
             Expr::Assign(_) => visitor.visit_assign_expr(expr),
             Expr::Binary(_) => visitor.visit_binary_expr(expr),

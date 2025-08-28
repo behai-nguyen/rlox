@@ -263,23 +263,9 @@ pub trait Visitor<T> {
     fn visit_while_stmt(&mut self, stmt: Rc<Stmt>) -> Result<T, LoxRuntimeError>;
 }
 
-// Implement `accept()`, `accept_ref()` for `Stmt`
+// Implement `accept()` for `Stmt`.
 impl Stmt {
     pub fn accept<T>(stmt: Rc<Stmt>, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {
-        match stmt.as_ref() {
-            Stmt::Block(_) => visitor.visit_block_stmt(stmt),
-            Stmt::Class(_) => visitor.visit_class_stmt(stmt),
-            Stmt::Expression(_) => visitor.visit_expression_stmt(stmt),
-            Stmt::Function(_) => visitor.visit_function_stmt(stmt),
-            Stmt::If(_) => visitor.visit_if_stmt(stmt),
-            Stmt::Print(_) => visitor.visit_print_stmt(stmt),
-            Stmt::Return(_) => visitor.visit_return_stmt(stmt),
-            Stmt::Var(_) => visitor.visit_var_stmt(stmt),
-            Stmt::While(_) => visitor.visit_while_stmt(stmt),
-        }
-    }
-
-    pub fn accept_ref<T>(stmt: Rc<Stmt>, visitor: &mut dyn Visitor<T>) -> Result<T, LoxRuntimeError> {
         match stmt.as_ref() {
             Stmt::Block(_) => visitor.visit_block_stmt(stmt),
             Stmt::Class(_) => visitor.visit_class_stmt(stmt),
