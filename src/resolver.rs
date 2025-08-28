@@ -48,11 +48,11 @@ impl<'a> Resolver<'a> {
     }
 
     fn resolve_statement(&mut self, stmt: Rc<Stmt>) -> Result<(), LoxRuntimeError> {
-        Stmt::accept_ref(stmt, self)
+        Stmt::accept(stmt, self)
     }
 
     fn resolve_expression(&mut self, expr: Rc<Expr>) -> Result<(), LoxRuntimeError> {
-        Expr::accept_ref(expr, self)
+        Expr::accept(expr, self)
     }
 
     // Resolves all statements, captures all errors.
