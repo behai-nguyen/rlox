@@ -151,6 +151,17 @@ git clone -b v0.6.1 https://github.com/behai-nguyen/rlox.git
 
 This post covers Chapter 13 of <a href="https://craftinginterpreters.com/inheritance.html" title="Inheritance" target="_blank">Crafting Interpreters</a>: <strong>Inheritance</strong>. Class inheritance syntax <span style="font-weight:bold;font-size:1.5em;"><code>&lt;</code></span> — <code>Class</code> <span style="font-weight:bold;font-size:1.5em;"><code>&lt;</code></span> <code>SuperClass</code> — has been implemented. The final remaining syntax element, <code>Expr::Super</code>, representing the <code>super</code> keyword, has also been added. In this post, we briefly discuss the new code, followed by bug fixes and test updates.
 
+11. Code Revision **v0.6.2**
+
+Clone this version with:
+
+```
+git clone -b v0.6.2 https://github.com/behai-nguyen/rlox.git
+```
+
+* General refactoring: test structure and error display improvements.
+* Bug fix: input script file existence is now checked before execution.
+
 ## License
 [MIT license](http://www.opensource.org/licenses/mit-license.php)
 and the [Creative Commons](  https://creativecommons.org/licenses/by-nc-nd/4.0/).
