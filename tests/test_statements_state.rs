@@ -221,13 +221,16 @@ fn get_block_script_results<'a>() -> TestScriptAndResults<'a> {
 fn test_interpreter_print_stmt() {
     // Ensure script is loaded, scanned and parsed successfully.
     let print_script_results = get_print_script_results();
+
+    let mut interpreter = make_interpreter_byte_stream();
     
     for entry in print_script_results {
+        interpreter.reset(false);
+        
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -238,12 +241,15 @@ fn test_interpreter_print_stmt() {
 fn test_interpreter_var_stmt() {
     let var_script_results = get_var_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in var_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -254,12 +260,15 @@ fn test_interpreter_var_stmt() {
 fn test_interpreter_assign_stmt() {
     let assign_script_results = get_assign_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in assign_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -270,12 +279,15 @@ fn test_interpreter_assign_stmt() {
 fn test_interpreter_block_stmt() {
     let assign_script_results = get_block_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in assign_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
-        // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
+        // Test interpreting/evaluating.        
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);

@@ -130,12 +130,15 @@ fn test_interpreter_function_objects_stmt() {
     // Ensure script is loaded, scanned and parsed successfully.
     let func_objs_script_results = get_function_objects_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in func_objs_script_results {
+        interpreter.reset(false);
+        
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -147,12 +150,15 @@ fn test_interpreter_return_statements_stmt() {
     // Ensure script is loaded, scanned and parsed successfully.
     let ret_stmt_script_results = get_return_statements_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in ret_stmt_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -164,12 +170,15 @@ fn test_interpreter_local_funs_and_closures_stmt() {
     // Ensure script is loaded, scanned and parsed successfully.
     let closures_script_results = get_local_funs_and_closures_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in closures_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);

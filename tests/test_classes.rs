@@ -211,7 +211,7 @@ fn get_class_methods_on_classes_script_results<'a>() -> TestScriptAndResults<'a>
             script_name: "./tests/data/field/on_instance.lox",
             expected_result: true,
             expected_output: vec!["bar value", "baz value", "bar value", "baz value"],
-        }, //
+        },
         TestScriptAndResult {
             script_name: "./tests/data/field/set_evaluation_order.lox",
             expected_result: false,
@@ -410,16 +410,13 @@ fn test_class_and_instance() {
     let cls_and_inst_script_results = get_class_and_instance_script_results();
 
     // Resolver needs an mutable Interpreter instance.
-    // let mut interpreter = make_interpreter_byte_stream();
-    // Resolver instance.
-    // let mut resolver: Resolver = Resolver::new(&mut interpreter);
+    let mut interpreter = make_interpreter_byte_stream();
 
     for entry in cls_and_inst_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
-
-        // Resolver needs an mutable Interpreter instance.
-        let mut interpreter = make_interpreter_byte_stream();
 
         // Create a resolver instance for each script file.
         let mut resolver: Resolver = Resolver::new(&mut interpreter);
@@ -431,7 +428,6 @@ fn test_class_and_instance() {
         assert!(res.is_ok(), "method() resolve error: {}", entry.script_name);
 
         // Test interpreting/evaluating.
-        // interpreter.clear_output();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -445,16 +441,13 @@ fn test_class_field_and_property() {
     let fld_and_ppt_script_results = get_class_field_and_property_script_results();
 
     // Resolver needs an mutable Interpreter instance.
-    // let mut interpreter = make_interpreter_byte_stream();
-    // Resolver instance.
-    // let mut resolver: Resolver = Resolver::new(&mut interpreter);
+    let mut interpreter = make_interpreter_byte_stream();
 
     for entry in fld_and_ppt_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
-
-        // Resolver needs an mutable Interpreter instance.
-        let mut interpreter = make_interpreter_byte_stream();
 
         // Create a resolver instance for each script file.
         let mut resolver: Resolver = Resolver::new(&mut interpreter);
@@ -466,7 +459,6 @@ fn test_class_field_and_property() {
         assert!(res.is_ok(), "method() resolve error: {}", entry.script_name);
 
         // Test interpreting/evaluating.
-        // interpreter.clear_output();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -480,16 +472,13 @@ fn test_class_methods_on_classes() {
     let mtds_on_clses_script_results = get_class_methods_on_classes_script_results();
 
     // Resolver needs an mutable Interpreter instance.
-    // let mut interpreter = make_interpreter_byte_stream();
-    // Resolver instance.
-    // let mut resolver: Resolver = Resolver::new(&mut interpreter);
+    let mut interpreter = make_interpreter_byte_stream();
 
     for entry in mtds_on_clses_script_results {
+        interpreter.reset(true);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
-
-        // Resolver needs an mutable Interpreter instance.
-        let mut interpreter = make_interpreter_byte_stream();
 
         // Create a resolver instance for each script file.
         let mut resolver: Resolver = Resolver::new(&mut interpreter);
@@ -501,7 +490,6 @@ fn test_class_methods_on_classes() {
         assert!(res.is_ok(), "method() resolve error: {}", entry.script_name);
 
         // Test interpreting/evaluating.
-        // interpreter.clear_output();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -515,16 +503,13 @@ fn test_class_this() {
     let class_this_script_results = get_class_this_script_results();
 
     // Resolver needs an mutable Interpreter instance.
-    // let mut interpreter = make_interpreter_byte_stream();
-    // Resolver instance.
-    // let mut resolver: Resolver = Resolver::new(&mut interpreter);
+    let mut interpreter = make_interpreter_byte_stream();
 
     for entry in class_this_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
-
-        // Resolver needs an mutable Interpreter instance.
-        let mut interpreter = make_interpreter_byte_stream();
 
         // Create a resolver instance for each script file.
         let mut resolver: Resolver = Resolver::new(&mut interpreter);
@@ -536,7 +521,6 @@ fn test_class_this() {
         assert!(res.is_ok(), "method() resolve error: {}", entry.script_name);
 
         // Test interpreting/evaluating.
-        // interpreter.clear_output();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -575,16 +559,13 @@ fn test_class_constructor_and_initializer() {
     let class_const_init_script_results = get_class_constructor_and_initializer_script_results();
 
     // Resolver needs an mutable Interpreter instance.
-    // let mut interpreter = make_interpreter_byte_stream();
-    // Resolver instance.
-    // let mut resolver: Resolver = Resolver::new(&mut interpreter);
+    let mut interpreter = make_interpreter_byte_stream();
 
     for entry in class_const_init_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
-
-        // Resolver needs an mutable Interpreter instance.
-        let mut interpreter = make_interpreter_byte_stream();
 
         // Create a resolver instance for each script file.
         let mut resolver: Resolver = Resolver::new(&mut interpreter);
@@ -596,7 +577,6 @@ fn test_class_constructor_and_initializer() {
         assert!(res.is_ok(), "method() resolve error: {}", entry.script_name);
 
         // Test interpreting/evaluating.
-        // interpreter.clear_output();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);

@@ -152,12 +152,15 @@ fn test_interpreter_conditional_execution_stmt() {
     // Ensure script is loaded, scanned and parsed successfully.
     let cond_exec_script_results = get_conditional_execution_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in cond_exec_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -169,12 +172,15 @@ fn test_interpreter_logical_operators_stmt() {
     // Ensure script is loaded, scanned and parsed successfully.
     let logical_op_script_results = get_logical_operators_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in logical_op_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -186,12 +192,15 @@ fn test_interpreter_while_loops_stmt() {
     // Ensure script is loaded, scanned and parsed successfully.
     let while_loops_script_results = get_while_loops_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in while_loops_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
@@ -203,12 +212,15 @@ fn test_interpreter_for_loops_stmt() {
     // Ensure script is loaded, scanned and parsed successfully.
     let for_loops_script_results = get_for_loops_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in for_loops_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
-        // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
+        // Test interpreting/evaluating.        
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);

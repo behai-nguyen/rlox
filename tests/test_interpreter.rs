@@ -738,12 +738,15 @@ fn get_precedence_script_results<'a>() -> TestScriptAndResults<'a> {
 fn test_interpreter_expr() {
     let expression_script_results = get_expression_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in expression_script_results {
+        interpreter.reset(false);
+        
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
         // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
         let res = interpreter.interpret(&statements);
 
         // assert_interpreter_expression_result(&entry, &res);
@@ -755,12 +758,15 @@ fn test_interpreter_expr() {
 fn test_interpreter_precedence() {
     let precedence_script_results = get_precedence_script_results();
 
+    let mut interpreter = make_interpreter_byte_stream();
+
     for entry in precedence_script_results {
+        interpreter.reset(false);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
 
-        // Test interpreting/evaluating.
-        let mut interpreter = make_interpreter_byte_stream();
+        // Test interpreting/evaluating.        
         let res = interpreter.interpret(&statements);
 
         // assert_interpreter_expression_result(&entry, &res);

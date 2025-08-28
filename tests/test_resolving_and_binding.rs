@@ -318,16 +318,13 @@ fn test_resolver_interpreter() {
     let rsv_itpt_script_results = get_resolver_interpreter_script_results();
 
     // Resolver needs an mutable Interpreter instance.
-    // let mut interpreter = make_interpreter_byte_stream();
-    // Resolver instance.
-    // let mut resolver: Resolver = Resolver::new(&mut interpreter);
+    let mut interpreter = make_interpreter_byte_stream();
 
     for entry in rsv_itpt_script_results {
+        interpreter.reset(true);
+
         // Ensure script is loaded, scanned and parsed successfully.
         let statements = assert_parse_script_statements(entry.script_name);
-
-        // Resolver needs an mutable Interpreter instance.
-        let mut interpreter = make_interpreter_byte_stream();
 
         // Create a resolver instance for each script file.
         let mut resolver: Resolver = Resolver::new(&mut interpreter);
@@ -339,7 +336,6 @@ fn test_resolver_interpreter() {
         assert!(res.is_ok(), "method() resolve error: {}", entry.script_name);
 
         // Test interpreting/evaluating.
-        // interpreter.clear_output();
         let res = interpreter.interpret(&statements);
 
         assert_interpreter_result(&entry, &res, &interpreter);
